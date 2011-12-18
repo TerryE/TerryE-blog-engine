@@ -1,0 +1,23 @@
+{INCLUDE: header}
+	<div id="main">
+		<h1>{TR:Search}</h1>
+{IF:COUNT == ''}
+		<p><b>{TR:Search all the articles using the keyword search below}</b>.</p>
+		<p>{TR:Enhance the results by using exact matching using quote marks.}</p>
+{ELSE}
+		<p><b>{COUNT} {TR:matches were found for} </b>{QUESTION}</p>
+  {IF:COUNT > 0}
+			<dl class="articlelist">
+    {FOREACH: MATCHES:MATCH}
+				<dt>{MATCH[date]}</dt> <dd><a href="article-{MATCH[id]}">{MATCH[title]}</a></dd>
+    {ENDFOR}
+			</dl>
+		<br style="clear:left;" />
+  {ENDIF}
+{ENDIF}
+<p>&nbsp;</p>
+		<form action="search" method="post">
+			<p>{TR:Keyword}: <input type="text" name="q" size="30" value="{QUESTION}" /> <input type="submit" name="submit" value="{TR:Submit}" /></p>
+		</form>
+	</div>
+{INCLUDE: trailer}

@@ -1,0 +1,21 @@
+{INCLUDE: header}
+	<div id="main">
+		<h1>{TR:TinyMCE Debian Test}</h1>
+
+		<form method="post" action="test-post">
+			<p>&nbsp;</p>
+			<p>{TR:Please note that your <strong>name</strong> is required and that all posts will not be visible until authorised by an administrator.}</p>
+			<table>
+				<tr>
+					<th><label for="commenttext">&nbsp;</label></th>
+					<td><textarea id="commenttext" name="commenttext" cols="100" rows="20">{TR:This is some content that will be editable with TinyMCE.}</textarea></td>
+				</tr>
+				<tr>  
+					<th>&nbsp;</th>
+					<td><input type="submit" name="post" value="{TR:Comment}" class="submit" /></td>
+				</tr>
+				</table>
+			</form>
+		{IF:false}<p><a href="javascript:tinyMCEsetup();">{TR:Load Editor}</a></p>{ENDIF}
+	</div>
+{INCLUDE: trailer}

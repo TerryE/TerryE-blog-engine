@@ -1,0 +1,20 @@
+{XML_TAG}
+	<rss version="2.0"><channel>
+	<title><![CDATA[{TITLE}]]></title>
+ 	<copyright><![CDATA[copyright 2006, 2010 - some rights reserved | {SERVER}]]></copyright>
+ 	<link>http://{SERVER}/</link>
+ 	<description><![CDATA[{TITLE}]]></description>
+ 	<language>en</language>
+ 	<generator><![CDATA[Terry Ellison's Blog Engine]]></generator>
+ 	<pubDate>{PUBDATE}</pubDate>
+ 	<ttl>1</ttl>
+ {FOREACH:RSS_ARTICLES:ARTICLE}
+	<item>
+		<title><![CDATA[{ARTICLE[title]}]]></title>
+		<description><![CDATA[{ARTICLE[descript]}]]></description>
+	<link><![CDATA[http://{SERVER}/article-{ARTICLE[id]}]]></link>
+	<pubDate><![CDATA[{ARTICLE[date]}]]></pubDate>
+	</item>
+ {ENDFOR}
+	</channel>
+</rss>

@@ -1,0 +1,42 @@
+{INCLUDE: header}
+	<div id="main">
+		<h1>{TR:Administration}</h1>
+{IF:COMMENT_ACTION}
+		<h2>{TR:Administration of Comments — }{COMMENT_ACTION}</h2>
+		<p>{TR:<b>%s</b> has carried out the <b>%s</b> action on the following comment in:USER:COMMENT_ACTION} <a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a>:</p>
+		{COMMENT[comments]}
+{ELSEIF:LOGGED_ON_ADMIN}
+		<p>{TR:You are logged on to your administrative account\:} <b>{LOGGED_ON_USER}&nbsp; <small>(<a href="admin-pwdchange">{TR:change password}</a>)</small></b></p>
+		<form id="postform" method="post" action="admin">
+			<table>
+				<tr> <th><label for="newtitle">{TR:New Article Title\:}</label></th>
+					 <td><input type="text" id="newtitle" name="newtitle" size="80" /></td> </tr>
+				<tr> <th>&nbsp;</th>
+					<td><input type="submit" name="create" class="submit" value="{TR:Create Article}" /> </td></tr>
+				<tr> <th>&nbsp;</th>
+					<td class="formdisclaimer"><p>{TR:The new article will be hidden from normal users, but editable by you through the article view page. To enable general visiblity, set the metatag <b>"flag"</b> to 1 before saving.}</p></td></tr>
+  {IF:BLOG_SERVER == 'local'}
+				<tr> <th>&nbsp;</th>
+					<td><input type="submit" name="sync" class="submit" value="{TR:Sync articles to public website}" /> </td></tr>
+  {ENDIF}
+			</table>
+		</form>
+  {IF:REPORT}
+<pre>{REPORT}</pre>
+  {ENDIF}
+{ELSE}
+		<p>{TR:<b>Log in</b> to your administrative account\:}</p>
+		<form id="postform" method="post" action="admin">
+			<table>
+				<tr> <th><label for="loginemail">{TR:Email}</label></th>
+					 <td><input type="text" id="loginemail" name="loginemail" /></td> </tr>
+				<tr> <th><label for="loginpassword">{TR:Password}</label></th>
+					<td><input type="password" id="loginpassword" name="password" /></td></tr>
+				<tr> <th>&nbsp;</th>
+					<td><input type="submit" name="login" class="submit" value="{TR:Log in}" />
+				</td></tr>
+			</table>
+		</form>
+{ENDIF}
+	</div>
+{INCLUDE: trailer}

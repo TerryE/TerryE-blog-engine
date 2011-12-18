@@ -1,0 +1,25 @@
+body#tinymce { margin: 0px; padding: 2em 0em 4em 2em; font-size: 16px; text-decoration: none; 
+	font-family: Verdana, Arial, Helvetica, sans-serif; color: #8E1F0D; }
+#tinymce pre, #tinymce code	{ margin-left: 1cm; margin-top: 0.18cm; margin-bottom: 0.18cm; color : #000080; 
+	font-size: 80%; font-family : "Lucida Console", monospace, sans-serif; }
+#tinymce h2 h3	{ color: #8E1F0D; margin: 5px 0px 10px 0px; padding: 0px; widows: 2; orphans: 2; }
+#tinymce h2			{ font-size: 18px; }
+#tinymce h3			{ font-size: 16px; }
+#tinymce h3 a,h4 a 	{ text-decoration: none; }
+#tinymce img        { border: 0px }
+
+#tinymce b			{ font-weight: bold ! important; }
+#tinymce em			{ font-style: italic ! important; }
+#tinymce p,#tinymce li		{ margin-top: 0; margin-bottom: 0.21cm; direction: ltr; widows: 2; orphans: 2; font-family: Arial, sans-serif; font-size: 100%; }
+#tinymce p.indent	{ margin-left: 1cm; }
+#tinymce p.outdent	{ margin-left: -1cm; }
+#tinymce tt			{ font-size: 90%; font-family: "Lucida Console", monospace, helvetica, sans-serif; }
+#tinymce td p       { margin-bottom: 0cm; direction: ltr; widows: 2; orphans: 2; font-family: Arial, sans-serif; font-size: 80%; }
+#tinymce p, li      { margin-top: 0; margin-bottom: 0.21cm; direction: ltr;widows: 2; orphans: 2; font-family: Arial, sans-serif; font-size: 100%; }
+#tinymce p.code     { margin-left: 1cm; margin-top: 0.18cm; margin-bottom: 0.18cm; color : #000080; 
+					  font-size: 90%; font-family: "Lucida Console", monospace, helvetica, sans-serif; }
+#tinymce span.code  { color : #000080; font-size: 100%; font-family : "Lucida Console", monospace, helvetica, sans-serif }
+#tinymce ul         { list-style-type : square; margin-left : 0; padding-left : .5cm }
+#tinymce ul li p    { list-style-type : square; margin-left : 0; padding-left : .5cm }
+
+

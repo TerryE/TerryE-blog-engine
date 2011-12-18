@@ -1,0 +1,23 @@
+{XML_TAG}
+	<rss version="2.0"><channel>
+	<title><![CDATA[{TITLE}]]></title>
+ 	<copyright><![CDATA[copyright 2006, 2010 - some rights reserved | {SERVER}]]></copyright>
+ 	<link>http://{SERVER}/</link>
+ 	<description><![CDATA[{TITLE}]]></description>
+ 	<language>en</language>
+ 	<generator><![CDATA[Terry Ellison's Blog Engine]]></generator>
+ 	<ttl>15</ttl>
+ {FOREACH:RSS_COMMENTS:COMMENT}
+	<item>
+		<title><![CDATA[{COMMENT[title]}]]></title>
+		<author>{COMMENT[mail_addr]} ({COMMENT[author]})</author>
+		<link><![CDATA[http://{SERVER}/article-{COMMENT[article_id]}#comment-{COMMENT[id]}]]></link>
+		<guid>http://{SERVER}/comment/{COMMENT[article_id]}/{COMMENT[id]}</guid>
+		<pubDate><![CDATA[{COMMENT[date]}]]></pubDate>
+		<description><![CDATA[<h1><b>{TR:Author}</b>: {COMMENT[author]} <b>{TR:IP}</b>: {COMMENT[ip]} — {IF:COMMENT[flag]} {TR:Confirmed} — {ENDIF} ( 
+		{IF:!COMMENT[flag]}<a href="http://{SERVER}/admin-comment?id={COMMENT[id]}&amp;action=confirm&amp;uid={COMMENT[uid]}">{TR:Confirm}</a>, {ENDIF}<a href="http://{SERVER}/admin-comment?id={COMMENT[id]}&amp;action=delete&amp;uid={COMMENT[uid]}">{TR:Delete}</a> )</h1>{COMMENT[comments]}]]></description>
+	</item>
+ {ENDFOR}
+	</channel>
+</rss>
+

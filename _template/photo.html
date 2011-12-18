@@ -1,0 +1,40 @@
+{INCLUDE: header}
+{// Display an idividual photo. If an admin, then also display the form to allow its update and deletetion}
+	<div id="main">
+		<h1><a href="photo-album">{TR:Photo Albums}</a> | <a href="photo-album-{PHOTO[album_id]}">{PHOTO[album_name]}</a> | {PHOTO[title]}</h1>
+		<ul class="articleextras">
+			<li class="sprite_button permalink"><a href="photo-{PHOTO[id]}">{TR:Permalink}</a></li>
+{IF:LOGGED_ON_ADMIN}
+			<li class="sprite_button admin"><a href="#admin-form">{TR:Administer}</a></li>
+{ENDIF}
+		</ul>
+{IF:PHOTO[description]}
+		<p>{PHOTO[description]}</p>
+{ENDIF}
+		<p id="photo"><a href="images/photos/full/{PHOTO[filename]}"><img src="images/photos/full/{PHOTO[filename]}" alt="{PHOTO[title]}" /></a></p>
+{IF:LOGGED_ON_ADMIN}
+		<h1>{TR:Administration of Photo}</h1>
+		<a name="admin-form"></a>
+		<div id="postform">
+			<form enctype="multipart/form-data" action="photo-{PHOTO[id]}" method="post">
+				<table>
+					<tr> <th><label for="title">{TR:Photo Title}</label></th>
+						<td><input type="text" name="title" size="60" value="{PHOTO[title]}" /></td></tr>
+					<tr><th><label for="description">{TR:Description}</label></th>
+						<td><textarea name="description">{PHOTO[description]}</textarea></td></tr>
+					<tr><th><label for="flag">{TR:Show Image?}</label></th>
+						<td><input type="checkbox" name="flag" value="{PHOTO[flag]}"{IF:PHOTO[flag]} checked{ENDIF}/></td></tr>	
+					<tr><th><label for="replacement">{TR:Replace Image}</label></th>
+						<td><input type="file" name="replacement" /></td></tr>
+					<tr><th>&nbsp;</th>
+						<td class="formdisclaimer"><p>{TR:Photo's should be in jpg or jpeg format for best results.}</p>
+							<input type="hidden" name="album" value="{PHOTO[album_id]}" /></td></tr>
+					<tr><th>&nbsp;</th>
+						<td><input type="submit" name="update" value="{TR:Update}" /> &nbsp; 
+							<input type="submit" name="delete" value="{TR:Delete}" /></td></tr>
+				</table>
+			</form>
+		</div>
+{ENDIF}
+	</div>
+{INCLUDE: trailer}

@@ -1,0 +1,104 @@
+{INCLUDE: header}
+	<div id="main">
+{IF:ERROR}{// Then a simple error form is displayed}
+		<p><b>{TR:The requested article cannot be found.}</b></p>
+		<p>{TR:Please <a href="javascript\:history.go(-1)">go back</a> and select another.}</p>
+{ELSEIF:EDIT_ARTICLE}
+{SCRIPT_TAG}
+	  <div id="adminform">
+		<form method="post" action="article-{ARTICLE[id]}">
+			<textarea class="mceArticleSource" name="article_content">
+{ESCAPED_DETAILS}
+			</textarea><br />
+			<input type="hidden" name="save" value="submit"/>
+		</form>
+	  </div>
+{ELSE}
+		<h1><a href="rss-blog"><img src="themes/{THEME}/valid_rss.png" alt="RSS Feeds" /></a></h1>
+		<h1>{ARTICLE[title]}</h1>
+		<ul id="articledetails">
+			<li><span class="author">{ARTICLE[author]}</span></li>
+			<li><span class="date">{ARTICLE[datetime]}</span></li>
+ {IF:ENABLE_COMMENTS}{// Only display the link to comments anchor if the article has comments}
+			<li><span class="comments">{IF:ARTICLE[comment_count]>0}<a href="#commentsanchor">{TR:Comments} ({ARTICLE[comment_count]})</a>{ELSE}{TR:Comments} (0){ENDIF}</span></li>
+			<li><span class="comments"><a href="article-{ARTICLE[id]}&amp;comments=enabled#postcomment">{TR:Post a comment}</a></span></li>
+ {ENDIF}
+			{IF:ADMIN_URI}<li><span class="sprite admin"><a href="{ADMIN_URI}">{TR:Edit URI}</a></span></li>
+			<li><span class="admin"><a href="article-{ARTICLE[id]}&amp;edit=enabled">{TR:Edit Inline}</a></span></li>{ENDIF}
+		</ul>
+{ARTICLE[details]}
+		<ul id="articleextras">
+			<li><span class="permalink"><a href="article-{ARTICLE[id]}">{TR:Permalink}</a></span></li>
+			<li><span class="comments">{TR:Comments} ({ARTICLE[comment_count]})</span></li>
+			{IF:ENABLE_COMMENTS}<li><span class="comments"><a href="article-{ARTICLE[id]}&amp;comments=enabled#postcomment">{TR:Post a comment}</a></span></li>{ENDIF}
+		</ul>
+
+		<a id="commentsanchor"></a>
+
+{// Now add the comments for the article is any exist}
+
+  {IF:ARTICLE[comment_count]>0}
+		<h3>{TR:Comments}</h3>
+    {FOREACH: COMMENTS:COMMENT}
+		<div class="comment">
+			<ul>
+				<li class="commentnumber"><a id="comment-{COMMENT[id]}"></a>{COMMENT[ndx]}.</li>
+				<li>{TR:At} {COMMENT[datetime]},</li>
+				<li>{TR:<b>%s</b> wrote\::COMMENT[author]}</li>
+			</ul>
+			<div class="commentbody">
+{COMMENT[comments]}
+			</div>
+	</div>
+    {ENDFOR}
+  {ENDIF}
+
+{// If the user has requested to add a comment then display the comments form}
+
+  {IF:COMMENT_LIMIT}
+		<h3>{TR:Comments not currently permitted}</h3>
+		<p>{TR:Please note that as an anti-spam measure, Each poster must confirm any comments posted, by responding to an email confirmation request.&nbsp; There is a limit on the number of unconfirmed comments from any client.&nbsp; Your client has reached this limit and further comments are disabled until your previous comments have been authorised.}</p>
+  {ELSEIF:INFO_TEXT} <a id="postcomment"></a><h4><font style="color: #FF0000; font-weight: bold;">{INFO_TEXT} </font></h4>
+  {ELSEIF:COMMENT_FORM_ENABLED}
+		<script type="text/javascript" src="includes/tinymce/tiny_mce.js"></script> 
+		<script type="text/javascript" src="includes/tinymce/tiny_mce_comment_bootstrap.js"></script> 
+		<div id="postform">
+			<a id="postcomment"></a>
+			<form method="post" action="article-{ARTICLE[id]}#postcomment">
+				<input type="hidden" name="article_id" value="{ARTICLE[id]}" />
+				<input type="hidden" name="time" value="{FORM[time]}" />
+				<input type="hidden" name="token" value="{FORM[check][token]}" />
+				<input type="hidden" name="debug" value="false" />
+				<h3>{TR:Post a comment}</h3>
+    {IF:FORM[error] != ''} <h4><font style="color: #FF0000; font-weight: bold;">{FORM[error]} </font></h4>{ENDIF}
+				<p>{TR:Please note that your <strong>name</strong> is required and that all posts will not be visible until authorised by an administrator.}</p>
+				<table>
+					<tr><th><label for="commentauthor">{TR:Name}</label></th>
+{IF:LOGGED_ON_ADMIN}
+						<td><input id="commentauthor" name="author" value="{LOGGED_ON_USER}" /><strong>&nbsp; {TR:Required}</strong></td></tr>
+{ELSE}
+						<td><input id="commentauthor" name="author" value="{FORM[author]}" /><strong>&nbsp; {TR:Required}</strong></td></tr>
+					<tr><th><label for="commentemail">{TR:Mail}</label></th>
+						<td><input id="commentemail" name="mailaddr" value="{FORM[mailaddr]}" /><strong>&nbsp; {TR:A valid mail address must be supplied}</strong></td></tr>
+  					<tr><th><label for="commentcookie">{TR:Remember me?}</label></th>
+						<td><input type="checkbox" id="commentcookie" name="cookie" value="1" {FORM[cookie]}/><em>{TR:A cookie will store your name/url for three months}</em></td></tr>
+{ENDIF}					<tr><th><label for="commenttext">{TR:Comments}</label></th>
+						<td><textarea id="commenttext" name="comment" class="mceArticleComment">{FORM[comment]}</textarea></td></tr>
+{IF:!LOGGED_ON_ADMIN}
+					<tr><th><label for="commentcode">{TR:What is\:}<br />{FORM[check][d1]}x{FORM[check][d2]} + {FORM[check][d3]} </label></th>
+						<td><input name="code" id="commentcode" /><em>&nbsp;{TR: Sorry, but you must answer this easy sum as a SPAM prevention measure.}</em></td</tr>
+{ENDIF}
+					<tr><th>&nbsp;</th>
+						<td><input type="submit" name="post" value="{TR:Submit Comment}" class="submit" /></td></tr>
+					<tr><th>&nbsp;</th>
+						<td class="formdisclaimer"><p>{TR:You should be aware that all information on blog site is © Terry Ellison 2010 and made open access under the <a href="http\://creativecommons.org/licenses/by/3.0/">Creative Commons Artistic Licence</a>.}</p>
+						<p><b>{TR:Your comments will only publicly available after you have carried out email confirmation.  Your email address will only used for this purpose and is not made public.}</b></p>
+						<p>{TR:Comments that are not confirmed will be automatically deleted after 7 days.}</p>
+						<p>{TR:The blog author reserves the right to delete comments which breach copyright or the rules of site etiquette as he determines (such as unnecessary use of obscenity or spam content).}</p></td></tr>
+				</table>
+			</form>
+		</div>
+  {ENDIF}
+{ENDIF}
+	</div>
+{INCLUDE: trailer}

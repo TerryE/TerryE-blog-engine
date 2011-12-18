@@ -1,0 +1,29 @@
+{INCLUDE: header}
+	<div id="main">
+		<h1>{TR:XML RSS Feed}</h1>
+		<h2>{TR:How Do I Get The RSS Feed?}</h2>
+		<p>{TR:Simply copy the following url's into your chosen news agrgregator and you are away.}</p>
+		<ul>
+			<li><b>{TR:Blog RSS}:</b><br /><a href="rss-blog">{SERVER}/rss-blog</a></li>
+{IF:FORUM_ENABLED}
+			<li><b>{TR:Forum RSS}:</b><br /><a href="rss-topics">{SERVER}/rss-topics</a></li>
+{ENDIF}
+{IF:LOGGED_ON_ADMIN}
+			<li><b>{TR:Comments Tracker RSS}:</b><br /><a href="rss-comments{COMMENTS_ADDR}">{SERVER}/rss-comments{COMMENTS_ADDR}</a></li>
+{ENDIF}
+		</ul>
+		<h2>{TR:What Is RSS?}</h2>
+		<p>{TR:RSS (Really Simple Syndication)</b> is an easy way for you to keep updated automatically on websites you like. Instead of you having to go to websites to see if they've written a new article or feature, you can use RSS (Really Simple Syndication) to get them to tell you every time they have something new.}</p>
+
+		<p>{TR:I offer RSS feeds (or channels) for all of my blogs and forum topics. This RSS feed is updated every second of every day to ensure the latest content is delivered to your desktop.}</p>
+		<h2>{TR:How Can I Use RSS?}</h2>
+		<p>{TR:Typical methods for using RSS include}:</p>
+		<ul>
+			<li>{TR:Using a program known as a News Aggregator to collect, update and display RSS feeds}</li>
+			<li>{TR:Incorporating RSS feeds into web pages}</li>
+			<li>{TR:Many email clients such as Thunderbird now support RSS subscriptions}</li>
+		</ul>
+
+		<p>{TR:<b>News Aggregators</b> (also called news readers) will download and display RSS feeds for you. A number of free and commercial News Aggregators are available for download. Popular news readers include <a href="http\://www.newzcrawler.com/">News Crawler</a>, <a href="http\://www.feeddemon.com/feeddemon/index.asp">FeedDemon</a> &amp; <a href="http\://www.newsgator.com/ngs/default.aspx">News Gator</a>.}</p>
+	</div>
+{INCLUDE: trailer}

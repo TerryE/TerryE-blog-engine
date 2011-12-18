@@ -1,0 +1,23 @@
+{INCLUDE: header}
+	<div id="main">
+		<h1>{TR:Article Archive}</h1>
+		<p>{TR:Find below an archived list of all blog articles.}</p>
+  {FOREACH: YEARS:YYYY:MONTHS}
+		<b>{YYYY}</b>
+		<ul>
+    {FOREACH: MONTHS:MONTHROW:DETAILS}
+			<li><a href="archive?y={YYYY}&amp;m={DETAILS[m]}">{MONTHROW}</a> ({DETAILS[count]})
+      {IF:MONTHROW==MONTH}
+			<dd>
+        {FOREACH:MONTH_ARTICLES:ARTICLE}
+				<dl class="articlelist"><dt>{ARTICLE[date]}</dt> <dd><a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a></dd></dl>
+        {ENDFOR}
+			</dd>
+		<br style="clear:left;" />
+      {ENDIF}</li>
+    {ENDFOR}
+		</ul>
+  {ENDFOR}
+	</div>
+{INCLUDE: trailer}
+{// <tr onmouseover="this.className='on';" onmouseout="this.className='off';">}

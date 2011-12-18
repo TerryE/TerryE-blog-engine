@@ -1,0 +1,15 @@
+{INCLUDE: header}
+	<div id="main">
+		<h1><a href="rss-blog"><img src="themes/{THEME}/valid_rss.png" width="85" height="15" alt="RSS Feeds" /></a></h1>
+{FOREACH:MAIN_ARTICLES:ARTICLE}
+		<div class="article">
+			<h1><a href = "article-{ARTICLE[id]}">{ARTICLE[title]}</a></h1>
+			<ul id="articledetails">
+				<li><span class="author">{ARTICLE[author]}</span></li>
+				<li><span class="date">{ARTICLE[datetime]}</span></li>
+			</ul>{ARTICLE[content]}&nbsp; <a href = "article-{ARTICLE[id]}" class="more">{TR:More ...} &gt;&gt;&gt;</a> </p>
+		</div>
+{ENDFOR}
+	</div>
+{INCLUDE: trailer}
+

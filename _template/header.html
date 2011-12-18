@@ -1,0 +1,40 @@
+{// 
+ // Standard header for all blog pages.
+ //
+ // Note that the various pages can request specific javascript files. Also, the reason for the following mangling is that 
+ // the PHP interpeter barfs when it sees and doesn't know how to treat bare <?xml...> tags.
+ //}
+<?php echo '<?xml version="1.0" encoding="UTF-8"?>'; ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+	<title>{TITLE}</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta http-equiv="Content-Style-Type" content="text/css" />
+	<meta http-equiv="Content-Script-Type" content="text/javascript" />
+	<meta name="keywords" content="" />
+
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+	<link rel="bookmark" href="./" />
+	<link rel="alternate" href="rss-blog" type="application/rss+xml" title="Blog Articles" />
+	<link rel="stylesheet" href="themes/{THEME}/print.css" type="text/css" media="print" />
+	<link rel="stylesheet" href="themes/{THEME}/screen.css" type="text/css" media="screen" />
+
+{// Loop over the header_scripts array. Each element is itself an array with one element keyed by 'file' or 'script'} 
+
+{FOREACH:HEADER_SCRIPTS:SCRIPT}
+ {IF:isset( SCRIPT[file]) }	<script type="text/javascript" src="{SCRIPT[file]}"></script>
+ {ELSE}	<script type="text/javascript">// <![CDATA[
+	{SCRIPT[script]}
+// ]]></script>
+ {ENDIF}
+{ENDFOR}
+
+</head>
+
+{// the onload option allows the deferal of script to after body loading}
+
+<body{IF:BODY_ONLOAD_SCRIPT} onload="{BODY_ONLOAD_SCRIPT}"{ENDIF}>
+<div id="container">
+
