@@ -1,8 +1,13 @@
 <?php
 /**
- *  Process archive page. Parameters are:  
- *   - y (optional, POST)  Expand year
- *   - m (optional, POST)  Expand month 
+ * Process archive page.
+ * This is a new archive page algorithm which replaces a previous version.  This version moves all 
+ * list windowing to the client's browser, instead doing a full extract of the article list.  The
+ * major performance benefit server side is that this approach removes the request parameters for
+ * month and year, allowing the article list to be HTML cached.
+ *
+ * Instead a script defined within the rendered page which uses dynamic HTML to implement list
+ * expansion.     
  */ 
 class ArchivePage extends Page {
 
@@ -10,51 +15,48 @@ class ArchivePage extends Page {
 		
 		parent::__construct();
 		$cxt = $this->cxt;
-		$cxt->allow( '#Im#Iy' );
-
-		$y = $cxt->y;
-		$m = $cxt->m;
 
 		// Define AppDB access functions used in PhotoPage
 
+		$userClause = $cxt->isAdmin ? '' : 'WHERE flag=1';
 		$this->db->declareFunction( array(
-'getArticlesByMY'	=> "Set=SELECT id, date, title FROM :articles
-						    WHERE  MONTH(FROM_UNIXTIME(date))=#1 AND YEAR(FROM_UNIXTIME(date))=#2 ORDER BY date DESC", 
-'getArticleCntByMY' => "Set=SELECT YEAR(FROM_UNIXTIME(date)) as year, MONTH(FROM_UNIXTIME(date)) as m,
-							       MONTHNAME(FROM_UNIXTIME(date)) as month, COUNT(*) as count 
-							FROM  :articles GROUP BY 1 DESC, 2 DESC, 3",
+'getArticles'	=> "Set=SELECT id, date, title FROM :articles $userClause ORDER BY date DESC", 
 		) );
 
-		# if y or m are invalid, or the article count is 0 then default to default listing; 
+		$articles = $this->db->getArticles();
+		$lastYear = date( "Y", $articles[0]['date'] + 0 );
+		$lastMon  = date( "F Y", $articles[0]['date'] + 0 );
+		$mList    = array();
+		$yList    = array();
 
-		if( $m >0 && $m <= 12 && $y >= 2006 && $y <= date( 'Y' ) ) {
+		// scan articles processing breaks on month and year
+		foreach( $articles as $article ) {
+			$date = $article['date'] + 0;
+			$article['date'] = date( "d M Y", $date );
+			$m = date( "F Y", $date );
+			list( $dummy, $y) = explode( ' ', $m );
 
-			$articles = $this->db->getArticlesByMY( $m, $y );
-			foreach( $articles as &$article ) {
-				$article['date'] = date( "d M Y", $article['date'] + 0 );
+			if( $lastMon != $m ) {
+				// break of month -- add month to yearlist
+				$yList[$lastMon]	= $mList;
+				$lastMon			= $m;
+				$mList				= array();
 			}
-			unset( $article );
 
-			$this->assign( array( 
-				'month_articles'	=> $articles,
-				'month'				=> date( "F Y", mktime( 0, 0, 0, $m, 1, $y) ),
-				) );
-		} else {
-			$this->assign( 'month', '' );
-		}
-
-		$years = array();
-		$months = $this->db->getArticleCntByMY();
-
-		foreach( $months as $mon ) {
-			$mmm_yy = $mon['month'] . ' ' . $mon['year'];
-
-			if( !array_key_exists( $mon['year'], $years ) ) {
-				$years[ $mon['year'] ] = array();
+			if( $lastYear != $y ) {
+				// break of year -- add year to articleList
+				$articleList[$lastYear]	= $yList;
+				$lastYear				= $y;
+				$yList					= array();
 			}
-			$years[$mon['year']][$mmm_yy] = array( 'm' => $mon['m'], 'count' => $mon['count'] );
+
+			$mList[]= $article;
 		}
-		$this->assign( 'years', $years );
-		echo $this->output( 'archive' ) ;
+		$yList[$y]			= $mList;
+		$articleList[$y]	= $yList;
+		
+		$this->assign( 'year_list', $articleList );
+		$cacheName = $cxt->isAdmin ? NULL : 'archive';
+		echo $this->output( 'archive', $cacheName ) ;
 	}
 }

@@ -68,7 +68,7 @@ span.code	{ color : #000080; font-size: 100%; font-family : "Lucida Console", mo
  * ================
  */ 
 
-#articledetails, #articleextras					{list-style:none; font-size:11px;}
+#articledetails, #articleextras					{ list-style:none; font-size:11px; }
 #articledetails>li, #articleextras>li			{ list-style:none; display: inline; }
 #articledetails li>span, #articleextras li>span { background-image:url(icons.png); background-repeat:no-repeat;  height: 10px; padding:0 20px; }
 li>span.admin		{background-position: 0  -3px;}
@@ -94,7 +94,8 @@ a.footnote	{ vertical-align : text-top; font-size: 75%; }
 #menu>ul			{ font-size: 12px; float: left; height: 18px; list-style: none; }
 #menu>ul>li			{ display: inline; list-style: none; }
 #menu>ul>li>a		{ margin: 0px 5px 0px 0px; padding: 5px 8px 5px 8px; text-decoration: none; font-weight: bold; float: left; 
-			  		  overflow: hidden;  display: inline; border-left: 1px solid #DFD8D2; border-top: 1px solid #DFD8D2; border-right: 1px solid #DFD8D2; }
+			  		  overflow: hidden;  display: inline; border-left: 1px solid #DFD8D2; border-top: 1px solid #DFD8D2; 
+					  border-right: 1px solid #DFD8D2; }
 #menu>ul>li>a:hover { color: #8E1F0D; background-color: #EDE9E6; text-decoration: none; font-weight: bold; }
 #menu>ul>li.on		{ color: #000; background: #EDE9E6; }
 #menu>ul>li.on>a	{ color: #7A6D62; background: #EDE9E6; text-decoration: none; }
@@ -102,6 +103,18 @@ a.footnote	{ vertical-align : text-top; font-size: 75%; }
 dl.articlelist		{ font-size: 80%; font-family: Arial, sans-serif; margin: 6px 0px 0px 0px;  } 
 dl.articlelist>dd	{ display: inline; float: left; padding: 3px 0 3px 5px; margin: 0px ;} 
 dl.articlelist>dt	{ display: inline; float: left; clear: left; width: 12%; padding: 3px 0 3px 3px; } 
+ul.archive          { margin-left: 1cm; }
+ul.archive li       { list-style: none;  margin-left: -1cm; }
+
+span.ListHead1      { text-decoration: underline; font-weight: bold; font-size: 120%; }
+span.ListHead2      { text-decoration: underline; font-size: 100%; }
+
+li.unfold>span.ListHead2 { display: none; }
+li.unfold>span.ListHead1 { text-decoration: none; }
+ul.archive > li.fold > ul > li.fold > span.ListHead2 { display: inline; }
+ul.archive > li.fold > ul > li.unfold > dl { display: inline; }
+ul.archive > li.unfold > ul > li > span.ListHead2 { display: none; }
+li.fold>ul>li>dl { display: none; }
 
 #postform p			{ font-size: 11px; }
 #postform th		{ width: 100px; padding: 0px 10px 0px 0px; font-weight: normal; text-align: right; vertical-align: top; font-size: 11px; }

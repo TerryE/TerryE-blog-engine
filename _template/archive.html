@@ -1,23 +1,24 @@
 {INCLUDE: header}
 	<div id="main">
 		<h1>{TR:Article Archive}</h1>
-		<p>{TR:Find below an archived list of all blog articles.}</p>
-  {FOREACH: YEARS:YYYY:MONTHS}
-		<b>{YYYY}</b>
+		<p>{TR:Listing of all blog articles.&nbsp; Click on year or month to expand this section.}</p>
+		<ul class="archive">
+  {FOREACH: YEAR_LIST:YYYY:MONTH_LIST}
+		<li class="fold"><span class="ListHead1" onclick="this.parentNode.className='unfold';">{YYYY}</span>
 		<ul>
-    {FOREACH: MONTHS:MONTHROW:DETAILS}
-			<li><a href="archive?y={YYYY}&amp;m={DETAILS[m]}">{MONTHROW}</a> ({DETAILS[count]})
-      {IF:MONTHROW==MONTH}
-			<dd>
-        {FOREACH:MONTH_ARTICLES:ARTICLE}
-				<dl class="articlelist"><dt>{ARTICLE[date]}</dt> <dd><a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a></dd></dl>
+    {FOREACH: MONTH_LIST:MONTH:ARTICLE_LIST}
+		<li class="fold"><span class="ListHead2" onclick="this.parentNode.className='unfold';">{MONTH} ({count(ARTICLE_LIST)})</span><dl class="articlelist">
+        {FOREACH:ARTICLE_LIST:ARTICLE}
+			<dt>{ARTICLE[date]}</dt>
+			<dd><a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a></dd>
         {ENDFOR}
-			</dd>
-		<br style="clear:left;" />
-      {ENDIF}</li>
+		<br style="clear:left;" /></dl></li>
     {ENDFOR}
-		</ul>
+		</ul></li>
   {ENDFOR}
+	</ul>
 	</div>
 {INCLUDE: trailer}
-{// <tr onmouseover="this.className='on';" onmouseout="this.className='off';">}
+{{ <tr onmouseover="this.className='on';" onmouseout="this.className='off';">}
+
+
