@@ -1,0 +1,65 @@
+Changes at V3.0.10
+ 
+AbstractBuilder:
+	Shouldn't be abstract class -- replace by interface.  All Page sub-classes now "implements" 
+	rather than "extends" Page.
+AdminPage:      
+	Add purge, sync sidebar and update_config functions.  Sidebar customisation comes from 
+	designated hidden article.
+AppContext:
+	Add hidden options for parameters with "_" prefix
+	HTML cacheable status hoisted to context calculation and set in HMTLcacheable parameter
+	Add "A" type for parameters to allow array parameters in post.
+	Rename "keywords" config parameter to "_keywords"
+	Add "sidebarCustomID" and "_sidebarCustom" parameters.  sidebarCustomID desinates the
+	hidden sidebar article, _sidebarCustom caches the custom content
+ArchivePage:
+	Remove m and y parameters and replace by client-side javascript to allow HTML caching
+	of archive page.
+ArticlePage:
+AuthorArticle:
+	Add header table to inline article edit function to allow update of article fields: 
+	title, flag, keywords, date.
+	**** need to remember: page HTML cache cleanup **** 
+Dispatcher:
+	Builder prefix for functions remapped from unlinkDirFiles to getTranslation
+Functions:
+	Remove debug error logging
+	Remove function unlinkDirFiles
+	****Todo**** debug log destination a config paramter
+Page:
+	Add support for automatic issuing of "Content-Type" header.  Defaults to 
+	"text/html; charset=UTF-8", but can be overridden by setting the contentType property
+	Change parameters to output method in line with hoisting HTML caching to Context
+	By default output() now issues Content-Type header and page content.
+	(All sub-classes modified to use "implements" and output() method no longer echoed.
+	unlinkDirFiles() and unlinkDirFiles() now Page methods
+RssPage:
+	Rewritten to make blog RSS feed conform to RSS 2.0
+Sitemap:
+	Base 3.0 implementation added.
+Sync:
+	Use remoteServer config variable as sync destination
+	**** Still have some issues here Md5 failure ****
+    **** Still have issues with sync to V2 setting flag=1
+TemplateBuilder:
+	Add ability to escape uppercase word in substitution fields with a \ escapes to prevent 
+	variable substition force interpretation as a literal, e.g. "\UTF-8" is interpreted as 
+	"UTF-8" rather than \$varUTF-8
+admin.html
+	as per class Admin	
+archive.html
+	ar per class Archive
+header.html
+	remove "<?php echo '<?xml version="1.0" encoding="UTF-8"?>" as this forces MSIE8 into quirks mode -- durrhhh.
+rss.blog.html
+	As per class Rss 
+search.html
+	Tweaks + in screem.css to be compatible with MSIE8 standard mode dispaly rules
+sitemap.html
+	as per class  Sitemap
+trailer.html
+	Add support for hidden article as a container for localalused sdebar content.
+\ref Introduction
+	Added new custom page to documentaion
+

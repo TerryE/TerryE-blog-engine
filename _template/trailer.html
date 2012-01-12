@@ -32,29 +32,29 @@
 {// The side bar is split into further divison, for user info, search, a list of recent article, forums (if enabled), photos and a set of blog links}
 
 	<div id="sidebar">
-		<h1 class="sidebar"><a href="./">{BLOG_NAME}</a></h1>
+		<h1><a href="./">{BLOG_NAME}</a></h1>
 {IF:LOGGED_ON_USER}
 		<div id="side_user">
 			<p>{TR:You are currently logged in as} <b>{LOGGED_ON_USER}</b>&nbsp; (<a href="admin-logout">{TR:logout}</a>)</p>
 		</div>
 {ENDIF}		<div id="side_search">
-			<h3 class="sidebar"><a href="search">{TR:Search}</a></h3>
+			<h3><a href="search">{TR:Search}</a></h3>
 			<form action="search" method="post">
 				<p>{TR:search all blog articles\:}<br /><input type="text" name="q" class="searchBox" value="{QUESTION}" /><br /><input type="submit" name="submit" value="{TR:Search}" class="submit" /></p>
 			</form>
 		</div>
 
 		<div id="side_keywords">
-			<h3 class="sidebar"><a href="./">{TR:Keywords}</a></h3>
+			<h3><a href="./">{TR:Keywords}</a></h3>
 			<ul>
 {FOREACH:SIDE_KEYWORDS:KEYWORD:KEYSIZE}
-				<li style="font-size:{KEYSIZE}%"><a href="search-{KEYWORD}">{KEYWORD}</a></li>
+				<li class="keyword" style="font-size:{KEYSIZE}%"><a href="search-{KEYWORD}">{KEYWORD}</a></li>
 {ENDFOR}
 			</ul>
 		</div>
 
 		<div id="side_blogs">
-			<h3 class="sidebar"><a href="./">{TR:Recent Articles}</a></h3>
+			<h3><a href="./">{TR:Recent Articles}</a></h3>
 			<ul>
 {FOREACH:SIDE_ARTICLES:ARTICLE}
 				<li><a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a></li>
@@ -64,14 +64,14 @@
 
 {IF:FORUM_ENABLED}
 		<div id="side_topics">
-			<h3 class="sidebar"><a href="forum">{TR:Recent Forum Topics}</a></h3>
+			<h3><a href="forum">{TR:Recent Forum Topics}</a></h3>
 			<ul>
 			</ul>
 		</div>
 {ENDIF}
 
 {IF:sizeof(SIDE_PHOTOS)}		<div id="side_photos">
-			<h3 class="sidebar"><a href="photo-album">{TR:Recent Photos}</a></h3>
+			<h3><a href="photo-album">{TR:Recent Photos}</a></h3>
 			<ul>
   {FOREACH:SIDE_PHOTOS:PHOTO}
 				<li><a href="photo-{PHOTO[id]}"><img src="images/photos/thumbnail/{PHOTO[id]}.jpg" alt="{PHOTO[title]}"/></a></li>
@@ -79,13 +79,8 @@
 		</div>
 {ENDIF}
 
-{IF:sizeof(BLOGROLL)}		<div id="side_blogroll">
-			<h3 class="sidebar">{TR:Blogroll}</h3>
-			<ul>
-{FOREACH:BLOGROLL:BLOGTITLE:BLOGURI}
-				<li><a href="{BLOGURI}">{BLOGTITLE}</a></li>
-{ENDFOR}
-			</ul>
+{IF:sizeof(SIDE_CUSTOM)}		<div id="side_custom">
+{SIDE_CUSTOM}
 		</div>
 {ENDIF}
 	</div>

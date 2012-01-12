@@ -1,21 +1,23 @@
-{XML_TAG}
+{//The XML tag is included as literal as the php interpreter barfs at it in implicit form}
+{"<?xml version=\"1.0\" encoding=\"\UTF-8\"?>\n"}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 	<url>
-		<loc>{HOST}index</loc>
+		<loc>http://{HOST}/index</loc>
 		<changefreq>daily</changefreq>
 		<priority>0.9</priority>
 	</url>
- {FOREACH:URLS:URL}
+ {FOREACH:ARTICLES:ARTICLE}
 	<url>
-		<loc>{HOST}article-{URL[id]}</loc>
-		<lastmod>{URL[last_edit]}</lastmod>
+		<loc>http://{HOST}/article-{ARTICLE[id]}</loc>
+		<lastmod>{ARTICLE[last_edit]}</lastmod>
 		<changefreq>weekly</changefreq>
 		<priority>0.7</priority>
 	</url>
  {ENDFOR}
- {FOREACH:SIDE_KEYWORDS:KEYWORD:KEYSIZE}
+ {FOREACH:KEYWORDS:KEYWORD:DATE}
 	<url>
-		<loc>{HOST}search-keyword&amp;q={KEYWORD}</loc>
+		<loc>http://{HOST}/search-{KEYWORD}</loc>
+		<lastmod>{date(DATE_FORMAT, DATE)}</lastmod>
 		<changefreq>weekly</changefreq>
 		<priority>0.4</priority>
 	</url>

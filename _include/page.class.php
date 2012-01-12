@@ -19,16 +19,18 @@ class Page {
 	protected $db;				//< current database
 	protected $language;		//<	local copy of cxt->languageCode
 	protected $langRtn;			//< local copy of cxt->translateRtn
+	protected $contentType;		//< default content type header to be issued on page output
 
 	/**
 	 * Page constructor.  This is called by any page class which extends Page to set up command attributes 
 	 */
 	public function __construct( ) {
-		$this->data		= new stdClass;
-		$this->cxt		= AppContext::get();
-		$this->db		= $this->cxt->db;
-		$this->language	= $this->cxt->languageCode;
-		$this->langRtn	= $this->cxt->translateRtn;
+		$this->data			= new stdClass;
+		$this->cxt			= AppContext::get();
+		$this->db			= $this->cxt->db;
+		$this->language		= $this->cxt->languageCode;
+		$this->langRtn		= $this->cxt->translateRtn;
+		$this->contentType	= "text/html; charset=UTF-8";
 
 		$this->db->declareFunction( array(
 'getPhotoList'		=> "Set=SELECT id, title, filename FROM :photos WHERE flag='1' ORDER BY id DESC LIMIT #1",
@@ -91,52 +93,64 @@ class Page {
 		$this->data = new stdClass;
 	}
 	/**
-	 * Clear down all data items
+	 * Output using the specified template.
 	 * @param $template The template to be used to render the HTML page
-	 * @param $cacheName If non-blank, the render engine dump of copy of the page to the HTML cache directory.
-	 * @param $nested Optional flag.  If true then any included templates are bound at runtime
+	 * @param $returnOP If true then the template output is return otherwise it is echoed out.
+	 * @param $nested Optional flag.  If true then any included templates are bound at runtime.
+	 * 
+	 * This is the commom method to render the $data content using the specified template.  The
+	 * HTML cache is optionally updated if the request is HTML cacheable, \b <tt>$returnOP</tt> 
+	 * and \b <tt>$nested</tt> are false.  Note that the html_cache isn't checked since this 
+	 * script wouldn't be called if is exists.
+	 * 
 	 */
-	public function output( $template, $cacheName = '', $nested = FALSE ) {
+	public function output( $template, $returnOP = FALSE, $nested = FALSE ) {
 
-		$cxt = AppContext::get();
+		$cxt = $this->cxt;
 
-		if( $cxt->debug === true ) {
-			header( 'Content-Type: text/plain' );
-			echo 'FILES = ';	print_r ( $_FILES );
-			echo 'GET = ';		print_r ( $_GET );
-			echo 'POST = ';		print_r ( $_POST );
-			echo 'COOKIE = ';	print_r ( $_COOKIE );
-			echo 'DATA = ';		print_r ( $this->data );
-			echo 'CONFIG = ';	print_r ( $cxt );
-		}
-		# Prefix template and compile directories with baseDir if needed
+		$templateClass = "Template{$cxt->languageCode}_" . preg_replace( '/\W/', '_', $template  );
 
-		if( !$nested ) {
-			///////// Need to process headers as well
-			ob_start();
-			}
-
-		$templateClass	  = "Template{$cxt->languageCode}_" . preg_replace( '/\W/', '_', $template  );
-		new $templateClass( $this->data, $cxt );
-
-		if( !$nested ) {
+		if( $nested ) {
 
 			// ob_start / ob_get_clean are handled by outer template
-#			$output = preg_replace( '/ ^ \s* \n /xm', '', ob_get_clean() );  // output the page getting rid of blank lines
-#			$outputCunks = preg_split( '!(</?pre>)!', ob_get_clean(), -1, PREG_SPLIT_DELIM_CAPTURE );
-			$output = ob_get_clean();
+			new $templateClass( $this->data, $cxt );
+
+		} else {
+
+			ob_start();
+
+			// If debug mode then switch to text mode and add content dump prologue
 			if( $cxt->debug === true ) {
-				echo "\n" . strlen($output). " bytes generated\n\n============== HTML as follows ==============\n";
+				$this->contentType = "text/plain; charset=UTF-8";
+				echo 'FILES = ';	print_r ( $_FILES );
+				echo 'GET = ';		print_r ( $_GET );
+				echo 'POST = ';		print_r ( $_POST );
+				echo 'COOKIE = ';	print_r ( $_COOKIE );
+				echo 'DATA = ';		print_r ( $this->data );
+				echo 'CONFIG = ';	print_r ( $cxt );
+				echo "\n============== HTML as follows ==============\n";
 			}
-			// write out copy of output to HTML cache file if caching is enable and the cache is specified
-			if( $cxt->enableHTMLcache && !empty( $cacheName ) ) {
-				file_put_contents( "{$cxt->HTMLcacheDir}/{$cacheName}.{$cxt->pid}", $output );
-				rename( "{$cxt->HTMLcacheDir}/{$cacheName}.{$cxt->pid}", 
-			            "{$cxt->HTMLcacheDir}/{$cacheName}.html" );
+
+			new $templateClass( $this->data, $cxt );
+
+			$output = ob_get_clean();
+
+			// write out copy of output to HTML cache file if cacheable and not $returnOP
+			if( $cxt->HMTLcacheable && !$returnOP ) {
+				$HTMLfileName = $cxt->HTMLcacheDir . '/'. $cxt->fullPage;
+				file_put_contents( $HTMLfileName . $cxt->pid, $output );
+				rename( $HTMLfileName . $cxt->pid, $HTMLfileName . '.html' );
 			}
-			return $output;
+
+			if( $returnOP ) {
+				return $output;
+			} else {
+				header( "Content-Type: {$this->contentType}" );
+				echo $output;
+			} 
 		}
 	}
+
 	/**
 	 * Initialise common page items
 	 */
@@ -158,11 +172,11 @@ class Page {
 			'function'			=> $function,
 			'enable_sidebar' 	=> ($cxt->sidebar > 0 ),
 			'logged_in'			=> isset( $_SESSION['blogemail'] ),
-			'blogroll' 			=> unserialize( $cxt->blogroll ),
 			'header_scripts'	=> array (),
 			'side_keywords' 	=> $cxt->keywordList,
 			'side_articles' 	=> $cxt->sidebar > 0 ? $this->db->getArticleList( $cxt->sidebar ) : array (),
 			'side_photos'		=> $cxt->photos  > 0 ? $this->db->getPhotoList( $cxt->photos ) : array (),
+			'side_custom'		=> $cxt->_sidebarCustom,
 		) ); 
 	}
 
@@ -172,7 +186,7 @@ class Page {
 	private $titleById; 	  //< This static is used to pass dynamic context into the callback routine
 
 	/**
-	 * Callback for replaceArticleNames.  This uses $this->titleById to substituthe correct
+	 * Callback for replaceArticleNames.  This uses $this->titleById to substitute the correct
 	 * article name into a ??? link. 
 	 */
 	private function replaceArticleCallback( $m ) {
@@ -220,8 +234,7 @@ class Page {
 		header( 'HTTP/1.0 404 Not Found' );
 		header( 'Content-Type: text/html' );
 		echo "<html><head><title>Invalid Page</title><head><body><h1>Page not found</h1></body></html>";
-	} else {
-*/		header( 'Content-Type: text/html' );
+	} else { */
 		$this->assign( array (
 			'requested_page' => $cxt->page,
 			'sub_page'   => $cxt->subPage,
@@ -232,6 +245,37 @@ class Page {
 			'server'     => var_export( $_SERVER , true ),
 			'page'       => var_export( $this, true ),
 			) );
-		echo $this->output('invalid');
+		$cxt->set( 'HMTLcacheable', false ); // Disable HTML caching for invalid pages 
+		$this->output('invalid');
+	}
+
+	/**
+	 * Purge HTML cache directory
+	 */
+	function purgeHTMLcache() {
+		return $this->unlinkDirFiles( $this->cxt->HTMLcacheDir, '.html$' );
+	}
+
+	/**
+	 * Delete files from a directory based on PREG filter
+	 * @param $directory    Absolute Directory path of the root directory
+	 * @param $pattern      Regexp pattern to be used to decide which files to delete
+	 */
+	protected function unlinkDirFiles( $directory, $pattern ) {
+		$cnt = 0;
+		// Don't use array_filter callback as this require a per-call lambda function 
+		// and ditto preg_filter since this is only for PHP >= 5.3
+		$files = scandir( $directory );
+		if( !is_array( $files ) ) {
+			return 0;
+		}
+ 
+		foreach( $files as $f ) {
+			if ( $f != '.' && $f != '..' && preg_match( "/$pattern/", $f) == 1  ) {
+				unlink( "$directory/$f" );
+				$cnt++;
+			}
+		}
+		return $cnt;
 	}
 }

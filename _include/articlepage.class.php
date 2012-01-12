@@ -158,8 +158,6 @@ class ArticlePage extends Page {
 			'enable_comments' => ( $this->article['comments'] == 1 ),
 	 		) );
 
-		$cacheName = ( !($cxt->isAdmin) && $cxt->user == '' && $cxt->requestCount == 1 ) ? "article-$id" : NULL;
-
-		echo $this->output( 'article', $cacheName );
+		$this->output( 'article' );
 	}
 }

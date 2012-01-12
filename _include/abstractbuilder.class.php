@@ -90,11 +90,11 @@
  * for <tt>self::get()->generate( ... )</tt>.     
  * 
  */
-abstract class AbstractBuilder {
+interface AbstractBuilder {
 	/**
 	 * Standard method for autoloaded builder classes.
 	 * @param $className name of class to be build
 	 * @returns the file name to be loaded by the autoloader
 	 */
-	abstract public static function build( $className );
+	public static function build( $className );
 }

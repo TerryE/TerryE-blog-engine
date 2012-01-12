@@ -72,7 +72,7 @@ class AppContext {
 			$a->$d = $a->rootDir . DIRECTORY_SEPARATOR . $a->$d . DIRECTORY_SEPARATOR;
 		}
 
-		$a->keywordList	= unserialize( $a->keywords ); 
+		$a->keywordList	= unserialize( $a->_keywords ); 
 		$a->pid			= getmypid();
 
 		// The config variable debugParam defines the name of the GET debug switch.  This is 
@@ -106,17 +106,18 @@ class AppContext {
 		// The user is an admin if a user record exists and it is flagged (=2) as as admin
 		$a->isAdmin 	= $a->user && $check['flag'] == 2;
 
-		// Set the request variable count
-		$a->requestCount= count( $_REQUEST );
+		// Set the request variable count, and set the cacheable flag if the user is a guest, there
+        // are no request parameters other than the page parameter and HTML caching is enabled.
+		$a->requestCount  = count( $_REQUEST );
+		$a->HMTLcacheable = $a->enableHTMLcache && $a->requestCount == 1 && !($a->isAdmin);
 			
 		// Decode the requested page. Note that hyphenation is embed arguments.  
 		// So the URI for Article 1 is "article-1" etc.
-		$page			= $a->page;
-		$parts			= explode( '-', ($page ? $page : 'index' ) );
+		$parts			= explode( '-', ($a->page ? $a->page : 'index' ) );
+		$a->fullPage	= $a->page;
 		$a->page		= $parts[0];
 		$a->subPage		= isset( $parts[1] ) ? $parts[1] : '';
 		$a->subOpt		= isset( $parts[2] ) ? $parts[2] : '';
-
 	}   
 
 	/**
@@ -137,7 +138,8 @@ class AppContext {
      *     -  \b ! (alias \b F) This is a file parameter
 	 *     -  \b I The type is integer   
 	 *     -  \b H The type is Hex string   
-	 *     -  \b S The type is string   
+	 *     -  \b A The type is an Array (used in tabular forms)   
+	 *     -  \b S The type is string
 	 *     -  \b F The type is (uploaded) file
      *
      *  -  The variable name is a lowercase word.
@@ -147,7 +149,7 @@ class AppContext {
 	public function allow($varList) {
 
 		$varList	= str_replace( ',', '', $varList );
-		$va 		= preg_split( "/([,]?[#:*GPCF][ISHF]?)/", $varList, -1,  PREG_SPLIT_DELIM_CAPTURE);
+		$va 		= preg_split( "/([,]?[#:*GPCF][ISAHF]?)/", $varList, -1,  PREG_SPLIT_DELIM_CAPTURE);
 		$a 			= $this->attrib;
 
 		array_shift( $va );
@@ -193,6 +195,7 @@ class AppContext {
 					case 'I':
 						settype( $result, "integer" );
 						break;
+					case 'A':
 					case 'H':
 					case 'F':
 						break;

@@ -1,5 +1,5 @@
 <?php
-##requires functions unlinkDirFiles 
+##requires functions getTranslation 
 ##requires class AppContext
 ##requires class AppDB
 ##requires class Page

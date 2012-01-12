@@ -1,0 +1,64 @@
+/*
+ * Copyright (C) 2006-2012 by Terry Ellisom
+ *
+ * Permission to use, copy, modify, and distribute this software and its
+ * documentation under the terms of the GNU General Public License is hereby 
+ * granted. No representations are made about the suitability of this software 
+ * for any purpose. It is provided "as is" without express or implied warranty.
+ * See the GNU General Public License for more details.
+ */
+/*! 
+\mainpage 
+
+\section Introduction Introduction
+
+I decided to implement my own blog in 2006 and in <a href="http://blog.ellisons.rg.uk/article-6">
+this early article</a> I discussed why I chose the Eggblog blog engine.  However, I was 
+disatisfied with some of the Eggblog features and I disliked the Eggblog V4 implementation, 
+so I decided to do was a total rewrite of the blog engine as a programming project.  This 
+project of implementing my "Version 2" engine became the theme of 
+<a href="http://blog.ellisons.org.uk/search-blogEngine"> many blog articles</a>.  However during 
+its first year's use  I realised that there were many aspects of the architecture that in 
+hindsight I would have done differently, so I have developed this Version 3 as a full
+refactoring with various enhancements to clear off this bucketlist.
+
+One item on this bucketlist was that I was unhappy with the standard of documentation in my 
+engine (even though it was better than that of the FLOSS packages that I've worked with).  I
+have used Doxygen on previous projects, so I decided to adopt it for this PHP-based project.  
+I have been extremely satisfied and this documentation set is the Doxygen O/P.  However I also
+had some other key goals for Version 3:
+
+ - <b> \ref Economy</b>. I hate long-winded coding styles.  I have had a number
+   of debates with the phpBB designers about why phpBB seems to have adopted a style that takes
+   ~100 lines to implement a function that could be done in ~10 lines.  This philopsohy seems 
+   to regard verbosity as equivalent to clarity.  My belief is that the implementation effort is 
+   directly proportional to the length of the code and ditto the error rates.  Putting thought 
+   into how you can ensure that the implementation is crisp, clean and orthogonal \a before you
+   code pays huge through-life dividends.  My blog engine (excluding comments) is under 4K lines 
+   long, yet it provides comparable functionality to Wordpress, but with a materially better 
+   runtime performance in a Webfusion environment.
+
+ - <b> \ref Efficiency</b>.  I have worked with and customised large open-source PHP applications  
+   such as phpBB, Mediawiki and Wordpress. and my experience is that they perform poorly on a 
+   shared hosting environment.  For example, in a LAMP environment they all require the use of
+   \c mod_php and a PHP Opcode accelerator such as \c APC to get acceptable user response;
+   and these modules just aren't available on a typical shared service.  There is no reason 
+   for this other than laziness on the part of the developers.
+
+ - <b> \ref Authoring</b>.  Many blogs have a limited editing framwork which is well 
+   suited to creating simple diary-style posts.  However I wanted to use my blog as a vehicle
+   for writing technical articles.  So I have fully integrated the powerful OpenOpenOffice.org 
+   Writer into the blog as a seemless WYSIWYG authoring tool.  I also implement a full 
+   <a href="http://blog.ellison6.home/article-36">TinyMCE</a> rich-text editing interface for  
+   end-users to add comments and as an alternative authoring tool for use 'on the road'.
+
+The corresponding sections referenced in the above list give a general overview and discussion on
+this aspect of the design, with the meat of the code-specific documentation covered in the Class List
+
+\section Economy Economy of implementation
+
+\section Efficiency Efficient performance on a shared hosting environment
+
+\section Authoring Authoring experience
+test
+*/

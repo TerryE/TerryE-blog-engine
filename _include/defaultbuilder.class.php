@@ -3,7 +3,7 @@
  * Default builder for autoload classes. See AbstractBuilder documentation for a detailed discussion
  * of the builder strategy.
  */
-class DefaultBuilder extends AbstractBuilder {
+class DefaultBuilder implements AbstractBuilder {
 	/**
 	 * Standard method for autoloaded builder classes.  
 	 *

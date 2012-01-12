@@ -76,7 +76,6 @@ class Sync {
 			} 
 		}
 		$db->updateLastSyncTime( $date_next_synced );
-		unlinkDirFiles( 'html_cache', '.*\.html' );
 		return $report;
 	}
 
@@ -127,7 +126,7 @@ class Sync {
 					// The input article is more recent than article on D/B so update the D/B and report
 					$outputArticles[] = array( 
 						'id' => $id, 
-						'status' => self::syncUpdateArticle( $remoteArticle, $article ),
+						'status' => self::updateArticle( $remoteArticle, $article ),
 						);
 				} else {
 
@@ -150,7 +149,6 @@ class Sync {
 
 		$db->updateLastSyncTime( $date_next_synced );
 		AdminUtils::get()->regenKeywords();
-		unlinkDirFiles( 'html_cache', '.*\.html' );
 		return gzcompress( serialize( $outputArticles ) );
 	}
 

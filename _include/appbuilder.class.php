@@ -3,7 +3,7 @@
  * App builder for autoload classes. See AbstractBuilder documentation for a detailed discussion
  * of the builder strategy.
  */
-class AppBuilder extends AbstractBuilder {
+class AppBuilder implements AbstractBuilder {
 	/**
 	 * There is a standard DefaultBuilder which able to gather source classes and compact them to 
 	 * a new version in the _cache directory.  However, some core application classes are themselves 

@@ -55,7 +55,8 @@
  *	{{Any comment not including an end brace} \endcode
  * where:
  * -  \b variable is any uppercase word (inc underscore) not in the above reserved list, e.g. \b 
- *    AUTHOR_NAME.
+ *    AUTHOR_NAME.  Note that prefixing an uppercase word with a \\ escapes variable substition and
+ *	  the word (less the \\) is used as a literal, e.g. \b \\UTF=8 
  *
  * -  \b expression is any valid expression using variables and constants. So you can do logical 
  *    tests: <b>AUTHOR_NAME != '' && COUNT > 1</b>.  Object constructs and PHP function references 
@@ -106,7 +107,7 @@
  * -  This is the third incarnation of my templating engine originally inspired by Vemplator 0.6.1 
  *    by Alan Szlosek.  My thanks to Alan for this original work.
  */
-class TemplateBuilder extends AbstractBuilder {
+class TemplateBuilder implements AbstractBuilder {
 	/**
 	 * This class uses a standard single class object pattern.
 	 */
@@ -228,11 +229,18 @@ foreach ( explode (':','$wantedVars') as \$v) {
 	 * object property can be used.
 	 */
 	private function transformCallback( $matches ) {
-		if (count( $matches ) == 2) {
-			$this->templateVars[$matches[1]]=1; 
-			return '$var' . $matches[1];
+debugVar('m', $matches );
+		// The two match patterns return 3 and 2 matches resp, so the count is used to desciminate
+		if (count( $matches ) == 3) {
+			// A \ infront of an uppercase word disables variable substitution
+			if( $matches[1] == '\\' ) {
+				return $matches[2];
+			} else {
+				$this->templateVars[$matches[2]]=1; 
+				return '$var' . $matches[2];
+			}
 		} else {
-			return "['{$matches[2]}']";
+			return "['{$matches[1]}']";
 		}
 	}
    /**
@@ -259,10 +267,10 @@ foreach ( explode (':','$wantedVars') as \$v) {
 		// Note that the opening "[" bracket is captured in the second case so that the callback can 
 		// use the 2/3 matches count from the regexp to descriminate which is appliable.
 		$from = array( 
-			'/\b ( [A-Z] [A-Z0-9_] *) \b/x',
-			'/ (\[) (\w+) \] /x',			
+			'/(\b|\\\\) ([A-Z] [A-Z0-9_]*) \b/x',
+			'/ \[ (\w+) \] /x',			
 		);
-
+debugVar('from', $from);
 		switch( sizeof( $parse ) ) {
 
 			case 2:						# Keywords with no arguments

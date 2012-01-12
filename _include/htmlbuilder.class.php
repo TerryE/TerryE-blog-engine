@@ -17,7 +17,7 @@
  *
  *
  */
-class HtmlBuilder extends AbstractBuilder {
+class HtmlBuilder implements AbstractBuilder {
 
 //-============== Properies and functions that are not needed in the runtime version ================
 

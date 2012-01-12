@@ -142,7 +142,7 @@ class PhotoPage extends Page {
 			'error'  => isset( $error ) ? $error : NULL, 
 			) );
 
-		echo $this->output( 'album' );
+		$this->output( 'album' );
 	}
 
 	/**
@@ -217,7 +217,7 @@ class PhotoPage extends Page {
 			'admin' => $this->cxt->user,
 			) );
 
-		echo $this->output( 'photo' );
+		$this->output( 'photo' );
 	}
 
 	const MAX_THUMB_PIXELS = 170;

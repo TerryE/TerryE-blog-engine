@@ -7,12 +7,12 @@
 {ELSE}
 		<p><b>{COUNT} {TR:matches were found for} </b>{QUESTION}</p>
   {IF:COUNT > 0}
-			<dl class="articlelist">
+			<ul class="articlelist">
     {FOREACH: MATCHES:MATCH}
-				<dt>{MATCH[date]}</dt> <dd><a href="article-{MATCH[id]}">{MATCH[title]}</a></dd>
+			<li><dl><dt>{MATCH[date]}</dt> <dd><a href="article-{MATCH[id]}">{MATCH[title]}</a></dd></dl></li>
     {ENDFOR}
-			</dl>
-		<br style="clear:left;" />
+			</ul>
+	<br style="clear:left;" />
   {ENDIF}
 {ENDIF}
 <p>&nbsp;</p>

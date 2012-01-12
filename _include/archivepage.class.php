@@ -56,7 +56,6 @@ class ArchivePage extends Page {
 		$articleList[$y]	= $yList;
 		
 		$this->assign( 'year_list', $articleList );
-		$cacheName = $cxt->isAdmin ? NULL : 'archive';
-		echo $this->output( 'archive', $cacheName ) ;
+		$this->output( 'archive' );
 	}
 }

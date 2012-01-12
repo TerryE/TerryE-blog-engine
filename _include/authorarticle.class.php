@@ -37,9 +37,11 @@ This function can take an optional allowed parameter
 		
 		$this->db->declareFunction( array(
 'updateArticle'		=> "UPDATE :articles 
-					    SET    date_edited=#1, details = '#2', trim_length='#3' WHERE id=#4",
+					    SET    flag = '#2', date = #3, date_edited = #4, title = '#5', 
+						       details = '#6', keywords = '#7', trim_length = #8 
+						WHERE id=#1", 
 'getAllKeyords' 	=> "Set=SELECT keywords FROM :articles",
-'updateKeywordList' => "UPDATE :config SET config_value='#1' WHERE config_name='keywords'",
+'updateKeywordList' => "UPDATE :config SET config_value='#1' WHERE config_name='_keywords'",
 'updatePurgeDTS'	=> "UPDATE :config SET config_value='#1' WHERE config_name='date_last_admin_purge'",
 'getCommentCount'	=> "Val=SELECT count(*) FROM :comments WHERE ip='#1' AND flag = 0",
 'getSameCount'  	=> "Val=SELECT count(*) FROM :comments WHERE date='#1' AND article_id=#2",
@@ -134,7 +136,7 @@ This function can take an optional allowed parameter
 		) );
 		
 		// Write to file and set the timestamp to the last date edited 
-		file_put_contents( $fileName, $this->page->output( 'article_html' ) );
+		file_put_contents( $fileName, $this->page->output( 'article_html', TRUE ) );
 		chmod( $fileName, 0660 );
 		touch( $fileName , $this->date_edited );
 	}
@@ -192,9 +194,7 @@ This function can take an optional allowed parameter
 		}
 
 		$new['title']       = $t[1];
-#debugVar( 'HTML into Load', $d[1] );
 		$new['details']     = HtmlUtils::cleanupHTML( $d[1], HtmlUtils::ARTICLE );
-#debugVar( 'HTML from Load', $new );
 		$new['date_edited'] = $fileTime;
 
 		if( preg_match( '! <a \s+ name \s*=\s* "endtaster" \s*> !xi', $new['details'], $m, PREG_OFFSET_CAPTURE ) ) {
@@ -219,12 +219,7 @@ This function can take an optional allowed parameter
 			$this->regenKeywords();
 		}
 
-		$changed = array_diff( array_keys( $new ), array ( 'details', 'trim_length', 'date_edited' ) );
-		if( count( $changed ) == 0 ) {
-			unlinkDirFiles( 'html_cache', "article-{$this->id}	.html|index\.html|sitemap\.html|rss.*\.html" );
-		} else {
-			unlinkDirFiles( 'html_cache', '.*\.html' );
-		}
+		$this->page->purgeHTMLcache();
 	}
 
 	/**
@@ -272,6 +267,13 @@ This function can take an optional allowed parameter
 
 		if( !$this->isAdmin ) return FALSE;
 
+		$content = "<table>".
+			"<tr><td><b>Title</b>:</td><td>{$this->title}</td></tr>\n" .
+			"<tr><td><b>Keywords</b>:</td><td>{$this->keywords}</td></tr>\n" .
+			"<tr><td><b>Flag</b>:</td><td>{$this->flag}</td></tr>\n" .
+			"<tr><td><b>Article Date</b>:</td><td>". 
+				date( 'D jS F Y, g:i a', $this->date ) . "</td></tr></table><hr/>\n" . $this->details;
+
 		$scriptTag = TinyMCE_Compressor::renderTag( array(
 			"url" => "includes/tinymce/tiny_mce_gzip.php",
 			"plugins" => "table,save,advlink,emotions,inlinepopups,insertdatetime,searchreplace," . 
@@ -281,7 +283,7 @@ This function can take an optional allowed parameter
 			), true );
 
 		$this->page->assign( array (
-			'escaped_details' => htmlspecialchars( $this->details ),
+			'escaped_details' => htmlspecialchars( $content ),
 			'script_tag'      => $scriptTag,
 			'edit_article'    => true,
 			) );
@@ -300,15 +302,39 @@ This function can take an optional allowed parameter
 		$this->cxt->allow( ':article_content' );
 
 		if( $this->cxt->article_content ){
- 			$this->details = HtmlUtils::cleanupHTML( html_entity_decode( $this->cxt->article_content ), 
-			                                          HtmlUtils::ARTICLE );
+			$oldKeywords = $this->keywords;
+
+ 			$content = HtmlUtils::cleanupHTML( html_entity_decode( $this->cxt->article_content ), 
+			                                   HtmlUtils::ARTICLE );
+
+			list( $header, $this->details ) = preg_split( '!<hr/>.!s', $content, 2 );
+
+			if( preg_match_all( '!<tr>\s+<td><b>(Title|Keywords|Flag|Article Date)</b>:</td>\s+<td>([^<]+)</td>\s+</tr>!', 
+			                    $header, $matches, PREG_SET_ORDER ) ) {
+				foreach( $matches as $m ) {
+					$field = strtolower( $m[1] );
+					if( $field == 'article date' ) {
+						$date = strtotime( $m[2] );
+						if( $date > 0 ) {
+							$this->date = $date;
+						}
+					} else {
+						$this->$field = $m[2];
+					}
+				}				
+			}
+
 			$this->edit_time = time();
 
 			if( preg_match( '! <a \s+ name \s*=\s* "endtaster" \s*> !xi', $this->details, $m, PREG_OFFSET_CAPTURE ) ) {
 				$this->trim_length = $m[0][1];     // REG_OFFSET_CAPTURE forces the double index variant
 			}
 
-		 	$this->db->updateArticle( $this->edit_time, $this->details, $this->trim_length, $this->id );
+		 	$this->db->updateArticle( 
+				$this->id, $this->flag, $this->date, $this->edit_time, $this->title, 
+				$this->details, $this->keywords, $this->trim_length );
+
+			$this->page->purgeHTMLcache();
 		}
 	}
 
@@ -481,8 +507,8 @@ This function can take an optional allowed parameter
 				// in the case of an admin / author the comment is immediately published 
 				// so update the article comment count and refresh to the comments anchor  
 				$this->db->updateCommentCnt( $this->id );
-				unlinkDirFiles( 'html_cache', "article-{$this->id}.html|sitemap\.html|rss-comment.*\.html" );
 				$this->page->assign( 'refresh_meta',"article-{$this->id}#commentstrailer" );
+				$this->page->purgeHTMLcache();
 				$infoText =	getTranslation( 'Comment registered.  It will be displayed on refresh' );
 			} else {
 

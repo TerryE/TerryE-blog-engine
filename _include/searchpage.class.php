@@ -64,8 +64,7 @@ class SearchPage extends Page {
 		}
 
 		$this->assign( 'question', $question );
-
-		echo $this->output( 'search', $cacheName );
+		$this->output( 'search' );
 
 	}
 }

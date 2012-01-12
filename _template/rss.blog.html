@@ -1,20 +1,35 @@
-{XML_TAG}
-	<rss version="2.0"><channel>
-	<title><![CDATA[{TITLE}]]></title>
- 	<copyright><![CDATA[copyright 2006, 2010 - some rights reserved | {SERVER}]]></copyright>
- 	<link>http://{SERVER}/</link>
- 	<description><![CDATA[{TITLE}]]></description>
- 	<language>en</language>
- 	<generator><![CDATA[Terry Ellison's Blog Engine]]></generator>
- 	<pubDate>{PUBDATE}</pubDate>
- 	<ttl>1</ttl>
- {FOREACH:RSS_ARTICLES:ARTICLE}
+{//The XML tag is included as literal as the php interpreter barfs at it in implicit form}
+{"<?xml version=\"1.0\" encoding=\"\UTF-8\"?>\n"}
+<rss version="2.0"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:atom="http://www.w3.org/2005/Atom"
+	xmlns:sy="http://purl.org/rss/1.0/modules/syndication/"
+	xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+	>
+<channel>
+	<title>{TITLE}</title>
+	<atom:link href="http://{SERVER}/rss-blog" rel="self" type="application/rss+xml" />
+	<link>http://{SERVER}/</link>
+	<description>{TITLE}</description>
+	<lastBuildDate>{PUBDATE}</lastBuildDate>
+	<language>{LANGUAGE}</language>
+	<sy:updatePeriod>daily</sy:updatePeriod>
+	<sy:updateFrequency>1</sy:updateFrequency>
+    <copyright><![CDATA[© Terry Ellison 2012 under under the CCA 3.0 licence (http://creativecommons.org/licenses/by/3.0/).]]></copyright>
+	<generator>http://blog.ellison6.home/search-blogEngine</generator>
+	<docs>http://blogs.law.harvard.edu/tech/rss</docs>
+{FOREACH:RSS_ARTICLES:ARTICLE}
 	<item>
 		<title><![CDATA[{ARTICLE[title]}]]></title>
-		<description><![CDATA[{ARTICLE[descript]}]]></description>
-	<link><![CDATA[http://{SERVER}/article-{ARTICLE[id]}]]></link>
-	<pubDate><![CDATA[{ARTICLE[date]}]]></pubDate>
+		<description><![CDATA[{ARTICLE[summary]} [...] ]]></description>
+		<link>http://{SERVER}/article-{ARTICLE[id]}</link>
+		<pubDate>{date('r', ARTICLE[date])}</pubDate>
+		<dc:creator>{AUTHOR}</dc:creator>
+        <guid isPermaLink="true">http://{SERVER}/article-{ARTICLE[id]}</guid>
+		<content:encoded><![CDATA[{ARTICLE[details]}]]></content:encoded>
 	</item>
- {ENDFOR}
-	</channel>
+{ENDFOR}
+</channel>
 </rss>

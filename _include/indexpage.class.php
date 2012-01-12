@@ -41,6 +41,6 @@ class IndexPage extends Page {
 		header( 'Etag: "' . md5( $output ) . '"' );
 		header( "Cache-Control: max-age=60" );
 	*/
-		echo $this->output( 'index', $cacheName  );
+		$this->output( 'index' );
 	}
 }

@@ -8,33 +8,57 @@
 {ELSEIF:LOGGED_ON_ADMIN}
 		<p>{TR:You are logged on to your administrative account\:} <b>{LOGGED_ON_USER}&nbsp; <small>(<a href="admin-pwdchange">{TR:change password}</a>)</small></b></p>
 		<form id="postform" method="post" action="admin">
-			<table>
-				<tr> <th><label for="newtitle">{TR:New Article Title\:}</label></th>
-					 <td><input type="text" id="newtitle" name="newtitle" size="80" /></td> </tr>
-				<tr> <th>&nbsp;</th>
-					<td><input type="submit" name="create" class="submit" value="{TR:Create Article}" /> </td></tr>
-				<tr> <th>&nbsp;</th>
-					<td class="formdisclaimer"><p>{TR:The new article will be hidden from normal users, but editable by you through the article view page. To enable general visiblity, set the metatag <b>"flag"</b> to 1 before saving.}</p></td></tr>
-  {IF:BLOG_SERVER == 'local'}
-				<tr> <th>&nbsp;</th>
-					<td><input type="submit" name="sync" class="submit" value="{TR:Sync articles to public website}" /> </td></tr>
-  {ENDIF}
-			</table>
-		</form>
+		<table>
+			<tr> <th><label for="newtitle">{TR:New Article Title\:}</label></th>
+				 <td><input type="text" id="newtitle" name="newtitle" size="80" /></td> </tr>
+			<tr> <th>&nbsp;</th>
+				<td><input type="submit" name="create" class="submit" value="{TR:Create Article}" /> </td></tr>
+			<tr> <th>&nbsp;</th>
+				<td class="formdisclaimer"><p>{TR:The new article will be hidden from normal users, but editable by you through the article view page. To enable general visiblity, set the metatag <b>"flag"</b> to 1 before saving.}</p></td></tr>
+		</table>
+<hr />
+		<table>
+{IF:CONFIG[remoteServer] != ''}
+			<tr> <th>&nbsp;</th>
+				<td><input type="submit" name="sync" class="submit" value="{TR:Sync articles to public website}" /> </td></tr>
+{ENDIF}
+			<tr> <th>&nbsp;</th>
+				<td><input type="submit" name="purge" class="submit" value="{TR:Purge HTML and code caches}" /> </td></tr>
+			<tr> <th>&nbsp;</th>
+				<td><input type="submit" name="syncsidebar" class="submit" value="{TR:Resync Sidebar Customisation}" />&nbsp; &nbsp; ( <a href="article-{CONFIG[sidebarCustomID]}&edit=enabled">{TR:Edit Custom Sidebar}</a> )</td></tr>
+		</table>
+<hr />
   {IF:REPORT}
-<pre>{REPORT}</pre>
+		<pre>{REPORT}</pre>
+<hr />
   {ENDIF}
+		<table cellspacing="1">
+		<thead>	
+			<tr><th style="text-align: left;"><strong>{TR:Config Name}</strong></th>
+				<td><input type="submit" name="update_config" class="button2" value="{TR:Update Config Values}" />&nbsp;</td>
+			</tr>
+			<tr><td class="formdisclaimer" colspan="2"><p>{TR:Note that editing some of these configuration settings might disable the blog, so take care!}</p></td></tr> 
+		</thead>
+		<tbody>
+{FOREACH:CONFIG:NAME:VALUE}
+			<tr>
+				<td class="row1" style="white-space: nowrap;"><strong>{NAME}</strong></td>
+				<td class="row2"><input type="text" name="config[{NAME}]" value="{htmlentities(VALUE)}" /></td>
+				</tr>
+			<tr>
+{ENDFOR}
+		</tbody>
+		</table>
+		</form>
 {ELSE}
 		<p>{TR:<b>Log in</b> to your administrative account\:}</p>
 		<form id="postform" method="post" action="admin">
 			<table>
-				<tr> <th><label for="loginemail">{TR:Email}</label></th>
-					 <td><input type="text" id="loginemail" name="loginemail" /></td> </tr>
-				<tr> <th><label for="loginpassword">{TR:Password}</label></th>
-					<td><input type="password" id="loginpassword" name="password" /></td></tr>
-				<tr> <th>&nbsp;</th>
-					<td><input type="submit" name="login" class="submit" value="{TR:Log in}" />
-				</td></tr>
+				<tr><th><label for="loginemail">{TR:Email}</label></th>
+					<td><input type="text" id="loginemail" name="loginemail" /></td>
+ 				    <th><label for="loginpassword">{TR:Password}</label>
+                    <td><input type="password" id="loginpassword" name="password" /></td>
+					<td><input type="submit" name="login" class="submit" value="{TR:Log in}" /></td></tr>
 			</table>
 		</form>
 {ENDIF}

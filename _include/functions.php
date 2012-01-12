@@ -31,7 +31,7 @@ function __autoload( $className ) {
 
 	if ( strpos( $fileName, 'builder.class.php' ) ) {
 		// include the _include version of the builder class
-	error_log( "Requiring $incFile" );
+#error_log( "Requiring $incFile" );
 		require( $incFile );
 	} else {
 		// include the _cache version if it exists
@@ -99,25 +99,6 @@ function getTranslation( $phrase ) {
 		$db->insertTranslation( $id, $lang, $phrase );
 	}
 	return $translation;
-}
-
-/**
- * Delete files from a directory based on PREG filter
- * @param $relDirectory Directory path relative to the root directory
- * @param $pattern      Regexp pattern to be used to decide which files to delete
- */
-function unlinkDirFiles( $relDirectory, $pattern ) {
-	$rootDir = AppContext::get()->rootDir;
-	$cnt = 0;
-	// Don't use array_filter callback as this require a per-call lambda function 
-	// and ditto preg_filter since this is only for PHP >= 5.3 
-	foreach( scandir( "$rootDir/$relDirectory" ) as $f ) {
-		if ( preg_match( "/$pattern/", $f) == 1 ) {
-			unlink( "$rootDir/$relDirectory/$f" );
-			$cnt++;
-		}
-	}
-	return $cnt;
 }
 
 /**

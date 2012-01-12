@@ -1,0 +1,50 @@
+#
+# Doxygen configuration file for the Terry's Blog Engine Project
+# ==============================================================
+#
+INPUT_ENCODING         = UTF-8
+PROJECT_NAME           = "Terry's Blog Engine"
+PROJECT_NUMBER         = "Version 3.1.0"
+OUTPUT_DIRECTORY       = ../docs
+REPEAT_BRIEF           = NO
+FULL_PATH_NAMES        = NO
+STRIP_FROM_PATH        = ../
+JAVADOC_AUTOBRIEF      = YES
+TAB_SIZE               = 4
+SUBGROUPING            = NO
+QUIET                  = NO
+WARNINGS               = YES
+DISABLE_INDEX          = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_METHODS  = YES
+HIDE_UNDOC_MEMBERS     = YES
+SORT_MEMBER_DOCS       = NO
+
+GENERATE_TODOLIST      = YES
+GENERATE_TESTLIST      = NO
+GENERATE_BUGLIST       = NO
+GENERATE_DEPRECATEDLIST= NO
+GENERATE_RTF           = NO
+GENERATE_LATEX         = YES
+GENERATE_HTML          = YES
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+
+SHOW_FILES             = YES
+SHOW_NAMESPACES        = NO
+WARN_FORMAT            = "$file:$line: $text"
+INPUT                  = ../index.php ../_include/dispatcher.class.php ../_include/functions.php \
+		../_include/appcontext.class.php ../_include/appdb.class.php ../_include/appsourceutils.class.php \
+		../_include/abstractbuilder.class.php ../_include/defaultbuilder.class.php ../_include/appbuilder.class.php  \
+		../_include/tinybuilder.class.php ../_include/htmlbuilder.class.php ../_include/templatebuilder.class.php \
+		../_include/page.class.php ../_include/aboutpage.class.php ../_include/adminpage.class.php \
+		../_include/archivepage.class.php ../_include/articlepage.class.php ../_include/indexpage.class.php \
+		../_include/invalidpage.class.php ../_include/photopage.class.php ../_include/rsspage.class.php \
+		../_include/searchpage.class.php ../_include/sitemappage.class.php \
+		../_include/authorarticle.class.php ../_include/sync.class.php \
+		../_misc
+FILE_PATTERNS          = *.php *.txt *.sh
+RECURSIVE              = YES
+EXCLUDE                = ../_template ../themes ../html_docs ../.git
+SEARCHENGINE           = NO
+CLASS_DIAGRAMS         = NO
