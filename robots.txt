@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /_admin/
+Disallow: /_cache/
+Disallow: /_include/
+Disallow: /_private/
+Disallow: /images/
+Disallow: /includes/
+Disallow: /themes/
+Sitemap:  http://blog.ellisons.org.uk/sitemap.xml
+

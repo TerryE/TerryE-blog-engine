@@ -1,0 +1,8 @@
+#! /bin/bash
+#
+# Prepare and pack blog for distro.
+#
+PACK_FILE=~/work/blog/blogSnapshots/blog-$(date "+%Y-%m-%d").tar.bz2
+tar -C ~/work/blog/blogV3 -cjhf $PACK_FILE --exclude="*~" \
+		favicon.ico index.php robots.txt docs _include _misc _template themes
+ls -l $PACK_FILE

@@ -1,0 +1,14 @@
+#! /bin/bash
+#
+# Prepare and stage for distro.
+#
+
+REMOTE=vRemote
+test "$1" == "remote" && REMOTE=remote
+DATE=$(date "+%Y-%m-%d")
+PACK_FILE=blog-$DATE.tar.bz2
+cat ~/work/blog/blogSnapshots/$PACK_FILE | $REMOTE "cat > _private/kits/$PACK_FILE"
+
+$REMOTE "tar -C blog -xjf _private/kits/$PACK_FILE _misc/unpack"
+$REMOTE "cd blog; _misc/unpack $DATE"
+
