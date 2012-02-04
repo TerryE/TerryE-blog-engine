@@ -56,7 +56,6 @@ class Sync {
 
 			$response = unserialize( gzuncompress( $response ) );
 			$report .= "Response contains ". count( $response ) . " records\n"; 
-
 			foreach( $response as $article ) {
 				list( $id, $status ) = array( $article['id'], $article['status'] );
 				if( $status == 'changed' ) {
@@ -80,17 +79,17 @@ class Sync {
 	}
 
 	/**
-	 * Client end which runs on the public web server.
-	 * @param $sync_content		 The post variable containing the compressed PHP serialised articles
+	 * Server end which runs on the public web server.
+	 * @param $syncContent		 The post variable containing the compressed PHP serialised articles
 	 * @param $dateLastSynced    DTS of the last sync operation.
-	 * @param $date_next_synced  DTS for this sync operation.
+	 * @param $dateNextSynced    DTS for this sync operation.
 	 * @return The compressed PHP serialised articles which have been updated on the public server
 	 * 
 	 * This service will be called by the client on the maintainers local system. 
 	 * It synchs the changes to the public instance.
 	 */
 
-	public static function server( $sync_content, $dateLastSynced, $date_next_synced ) {
+	public static function server( $syncContent, $dateLastSynced, $dateNextSynced ) {
 
 		$db=AppDB::get();
 		$db->declareFunction( array(
@@ -102,7 +101,7 @@ class Sync {
 		// Unpack input articles and reindex by article ID 
 
 		$remoteArticles = array();
-		foreach (  @unserialize( gzuncompress( $sync_content ) ) as $article ) {
+		foreach (  @unserialize( gzuncompress( $syncContent ) ) as $article ) {
 			$remoteArticles[(int) $article['id']] = $article;
 		}
 		$inputIds = implode( ',', array_keys( $remoteArticles ) );
@@ -139,7 +138,6 @@ class Sync {
 		}
 
 		// Any articles left in $remoteArticles are new inserts
-
 		foreach( $remoteArticles as $article ) {
 			$id = $article['id'];
 			$db->createBlankSarticle( $id );
@@ -147,9 +145,10 @@ class Sync {
 			$outputArticles[] = array( 'id' => $article['id'], 'status' => 'created' );
 		}
 
-		$db->updateLastSyncTime( $date_next_synced );
-		AdminUtils::get()->regenKeywords();
-		return gzcompress( serialize( $outputArticles ) );
+		$db->updateLastSyncTime( $dateNextSynced );
+		AuthorArticle::get()->regenKeywords();
+
+		return $outputArticles;
 	}
 
 	/**
@@ -161,7 +160,7 @@ class Sync {
 				                      'comments'=> '', 'keywords' => '', 'comment_count' => 0, 'encoding' => 'HTML', 
 			                          'title'	=> '', 'details'  => '', 'trim_length' => 0)
 			) {
-
+		$db = AppDB::get();
 		$id = $newArticle['id'];
 		unset( $newArticle['id'] );		// we don't need to reset the primary key
 

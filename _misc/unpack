@@ -7,17 +7,19 @@ TINYMCE_COMPRESSOR_VER=2_0_3
 cd /websites/LinuxPackage02/el/li/so/ellisons.org.uk/public_html/blog
 
 # remove all blog subdirectories except images
-rm -R $(ls | grep  -v images)
+rm -R _admin _cache _include _misc _template _tmp docs html_cache includes themes *.*
 
 # and replace working subdirectories
-mkdir --parents _admin _cache html_cache includes/tinymce /tmp/tmp$$
+mkdir --parents _admin _cache html_cache includes/tinymce _tmp/tmp$$
 
+unzip -x  ../_private/kits/tinymce_$TINYMCE_VER.zip -d _tmp/tmp$$
+unzip -x  ../_private/kits/tinymce_compressor_php_$TINYMCE_COMPRESSOR_VER.zip -d _tmp/tmp$$
 
-unzip -x  ../_private/kits/tinymce_$TINYMCE_VER.zip -d /tmp/tmp$$
-unzip -x  ../_private/kits/tinymce_compressor_php_$TINYMCE_COMPRESSOR_VER.zip -d /tmp/tmp$$
-mv /tmp/tmp$$/tinymce/jscripts/tiny_mce/* includes/tinymce
-mv /tmp/tmp$$/tinymce_compressor_php/tiny_mce_gzip.{php,js} includes/tinymce
-rm -R /tmp/tmp$$
+mv _tmp/tmp$$/tinymce/jscripts/tiny_mce/* includes/tinymce
+mv _tmp/tmp$$/tinymce_compressor_php/tiny_mce_gzip.{php,js} includes/tinymce
+
+sleep 1s
+rm -R _tmp/tmp$$
 
 # unpack kits tarball
 tar -xjf ../_private/kits/$KIT_FILE.tar.bz2 
@@ -27,7 +29,7 @@ cp -r _misc/tinymce/* includes/tinymce
 chmod -R 700  _admin _cache _include _template _misc
 
 # compress the CSS 
-perl - themes/terry/all.css <<'END_PERL' > /tmp/all.css
+perl - themes/terry/all.css <<'END_PERL' > _tmp/all$$.css
   undef $/;  $_=scalar(<>);
   s!/\*.*?\*/!!gs; 
   s![\n\s]+! !gs;
@@ -36,7 +38,9 @@ perl - themes/terry/all.css <<'END_PERL' > /tmp/all.css
   s/;/;\n\t/g;
   print;
 END_PERL
-mv /tmp/all.css themes/terry/all.css
+
+sleep 1s
+mv _tmp/all$$.css themes/terry/all.css
 
 source _misc/config
 sed -i -e "s/host:db:user:pwd:prefix_/$CONNECT_CFG/" index.php

@@ -14,19 +14,27 @@ TAB_SIZE               = 4
 SUBGROUPING            = NO
 QUIET                  = NO
 WARNINGS               = YES
-DISABLE_INDEX          = YES
+DISABLE_INDEX          = NO
 EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
 EXTRACT_LOCAL_METHODS  = YES
 HIDE_UNDOC_MEMBERS     = YES
 SORT_MEMBER_DOCS       = NO
+
+VERBATIM_HEADERS       = YES
+ALPHABETICAL_INDEX     = YES
+COLS_IN_ALPHA_INDEX    = 5
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
 
 GENERATE_TODOLIST      = YES
 GENERATE_TESTLIST      = NO
 GENERATE_BUGLIST       = NO
 GENERATE_DEPRECATEDLIST= NO
 GENERATE_RTF           = NO
-GENERATE_LATEX         = YES
-GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
 GENERATE_MAN           = NO
 GENERATE_XML           = NO
 
@@ -45,6 +53,6 @@ INPUT                  = ../index.php ../_include/dispatcher.class.php ../_inclu
 		../_misc
 FILE_PATTERNS          = *.php *.txt *.sh
 RECURSIVE              = YES
-EXCLUDE                = ../_template ../themes ../html_docs ../.git
-SEARCHENGINE           = NO
+EXCLUDE                = ../_template ../themes ../html_docs ../.git ../.gitignore
+SEARCHENGINE           = YES
 CLASS_DIAGRAMS         = NO

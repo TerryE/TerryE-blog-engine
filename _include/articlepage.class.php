@@ -37,7 +37,7 @@ class ArticlePage extends Page {
 
 		parent::__construct();
 		$cxt = $this->cxt;
-		$cxt->allow( '#commentaccepted#edit#comments:post:save:comment' );
+		$cxt->allow( '#commentaccepted#edit#comments:commentpost:save:comment' );
 
 		// Define AppDB access functions used in PhotoPage
 		$this->db->declareFunction( array(
@@ -101,7 +101,7 @@ class ArticlePage extends Page {
 			 *    repeated save request.
 			 **/
 			$admin->submittedArticle();
-			header( "Location: article-$id" );
+			$this->setLocation( "article-$id" );
 			return;
 
 		} else {
@@ -129,7 +129,7 @@ class ArticlePage extends Page {
 				 *    has been submitted then an "accepted" message is displayed which includes a  
 				 *    refresh meta otherwise the comments form is (re)displayed.
 				 */
-				list( $comment, $infoText ) = ( $cxt->post ) ?
+				list( $comment, $infoText ) = ( $cxt->commentpost ) ?
 					AuthorArticle::get($this)->processComment() :	
 					array( '', '' );
 				if( $comment === TRUE ) {

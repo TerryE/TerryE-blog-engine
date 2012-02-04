@@ -15,8 +15,8 @@ class AuthorArticle {
 	/**
 	 * Initialise the blog context. This is a static method since only one AppContext instance is 
 	 * allowed.  
-	 * @param $page  Page instance of invoking articlePage.   
-This function can take an optional allowed parameter 
+	 * @param $page  Page instance of invoking articlePage.  
+	 * This function can take an optional allowed parameter 
 	 */
 	public static function get($page) {
 		return isset(self::$_instance) ? self::$_instance : (self::$_instance = new self::$_class($page) );
@@ -345,7 +345,8 @@ This function can take an optional allowed parameter
 	 */
 	public function generateCommentForm( $errorText = '', $comment = '') {
 
-		$r = $this->cxt->allow( ':author:code:comment:cookie:mailaddr*user*email' );
+		$cxt     = $this->cxt;
+        $r       = $cxt->allow( ':author:code:comment:cookie:mailaddr*user*email' );
 		$timeNow = time();
 
 		if( $this->isAdmin ) {
@@ -431,11 +432,12 @@ This function can take an optional allowed parameter
 	 */
 	public function processComment() {
 
-		$r = $this->cxt->allow( ':author:code:cookie:mailaddr:comment:token:time:article_id:article_content' );
+		$cxt = $this->cxt;
+		$r = $cxt->allow( ':author:code:cookie:mailaddr:comment:token:time:article_id:article_content' );
 
 		// Prevent a refresh of the form submitting a duplicate comment	
 		if ( $this->db->getSameCount( $cxt->time, $this->id ) > 0 ) { 
-			header( "Location: article-{$this->id}" );
+			$this->page->setLocation( "article-{$this->id}" );
 			exit();
 		}
 
@@ -443,14 +445,14 @@ This function can take an optional allowed parameter
 
 		if( $this->isAdmin ) {
 
-			$author		= $this->cxt->user;
-			$mailaddr	= $this->cxt->email;  
+			$author		= $cxt->user;
+			$mailaddr	= $cxt->email;  
 
 		} else {
 
 			$correct_token = md5( sprintf( 'CHECK: %d %d %s %s %s', 
 			                               $cxt->code, $cxt->time, __FILE__, 
-			                               $this->cxt->salt, $_SERVER['HTTP_USER_AGENT'] ) );
+			                               $cxt->salt, $_SERVER['HTTP_USER_AGENT'] ) );
 			$author = $cxt->author;
 			$mailaddr = filter_var($cxt->mailaddr, FILTER_SANITIZE_EMAIL);
 
@@ -473,8 +475,8 @@ This function can take an optional allowed parameter
 				$infoText .= getTranslation( 'Wrong answer.  Try again.' ) .  '<br/>';
 			}
 			if( $cxt->cookie == 1 ) {
-				$cxt->user  = $author;
-				$cxt->email = $mailaddr;
+				$cxt->set( 'user', $author );
+				$cxt->set( 'email', $mailaddr );
 			}
 		}
 
@@ -520,7 +522,7 @@ This function can take an optional allowed parameter
 					'comment_uid'=> md5( "{$this->cxt->salt}$mailaddr:$commentID" ),
 					 ) );
 
-				$mailMsg = $this->page->output( 'confirm_email' );
+				$mailMsg = $this->page->output( 'confirm_email', TRUE );
 
 				$mailSubject = sprintf( getTranslation( 'Confirmation of comment on post %s' ),  $this->title );
 				$mailHeaders = implode ("\r\n", array( 

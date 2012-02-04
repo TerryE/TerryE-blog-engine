@@ -10,5 +10,5 @@ PACK_FILE=blog-$DATE.tar.bz2
 cat ~/work/blog/blogSnapshots/$PACK_FILE | $REMOTE "cat > _private/kits/$PACK_FILE"
 
 $REMOTE "tar -C blog -xjf _private/kits/$PACK_FILE _misc/unpack"
-$REMOTE "cd blog; _misc/unpack $DATE"
+$REMOTE "cd blog;bash -vx  _misc/unpack $DATE"
 

@@ -2,14 +2,14 @@
 	<div id="main">
 		<h1>{TR:Article Archive}</h1>
 		<p>{TR:Listing of all blog articles.&nbsp; Click on year or month to expand this section.}</p>
-		<ul class="archive">
+		<ul id="archive">
   {FOREACH: YEAR_LIST:YYYY:MONTH_LIST}
-		<li class="fold"><span class="ListHead1" onclick="this.parentNode.className='unfold';">{YYYY}</span><ul>
+		<li class="fold1"><span onclick="this.parentNode.className='unfold1';">{YYYY}</span><ul>
     {FOREACH: MONTH_LIST:MONTH:ARTICLE_LIST}
-		<li class="fold"><span class="ListHead2" onclick="this.parentNode.className='unfold';">{MONTH} ({count(ARTICLE_LIST)})</span>
-		<dl class="articlelist">
+		<li class="fold2"><span onclick="this.parentNode.className='unfold2';">{MONTH} ({count(ARTICLE_LIST)})</span>
+		<dl class="archivelist">
         {FOREACH:ARTICLE_LIST:ARTICLE}
-			<dt>{ARTICLE[date]}</dt><dd><a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a></dd><br style="clear:left;" />
+			<dt>{ARTICLE[date]}</dt><dd><a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a></dd><br/>
         {ENDFOR}
 		</dl>
     {ENDFOR}
@@ -18,6 +18,4 @@
 	</ul>
 	</div>
 {INCLUDE: trailer}
-{{ <tr onmouseover="this.className='on';" onmouseout="this.className='off';">}
-
 

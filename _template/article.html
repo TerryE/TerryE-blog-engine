@@ -21,16 +21,16 @@
 			<li><span class="date">{ARTICLE[datetime]}</span></li>
  {IF:ENABLE_COMMENTS}{// Only display the link to comments anchor if the article has comments}
 			<li><span class="comments">{IF:ARTICLE[comment_count]>0}<a href="#commentsanchor">{TR:Comments} ({ARTICLE[comment_count]})</a>{ELSE}{TR:Comments} (0){ENDIF}</span></li>
-			<li><span class="comments"><a href="article-{ARTICLE[id]}&amp;comments=enabled#postcomment">{TR:Post a comment}</a></span></li>
+			<li><span class="comments"><a href="article-{ARTICLE[id]}?comments=enabled#postcomment">{TR:Post a comment}</a></span></li>
  {ENDIF}
 			{IF:ADMIN_URI}<li><span class="sprite admin"><a href="{ADMIN_URI}">{TR:Edit URI}</a></span></li>
-			<li><span class="admin"><a href="article-{ARTICLE[id]}&amp;edit=enabled">{TR:Edit Inline}</a></span></li>{ENDIF}
+			<li><span class="admin"><a href="article-{ARTICLE[id]}?edit=enabled">{TR:Edit Inline}</a></span></li>{ENDIF}
 		</ul>
 {ARTICLE[details]}
 		<ul id="articleextras">
 			<li><span class="permalink"><a href="article-{ARTICLE[id]}">{TR:Permalink}</a></span></li>
 			<li><span class="comments">{TR:Comments} ({ARTICLE[comment_count]})</span></li>
-			{IF:ENABLE_COMMENTS}<li><span class="comments"><a href="article-{ARTICLE[id]}&amp;comments=enabled#postcomment">{TR:Post a comment}</a></span></li>{ENDIF}
+			{IF:ENABLE_COMMENTS}<li><span class="comments"><a href="article-{ARTICLE[id]}?comments=enabled#postcomment">{TR:Post a comment}</a></span></li>{ENDIF}
 		</ul>
 
 		<a id="commentsanchor"></a>
@@ -64,7 +64,7 @@
 		<script type="text/javascript" src="includes/tinymce/tiny_mce_comment_bootstrap.js"></script> 
 		<div id="postform">
 			<a id="postcomment"></a>
-			<form method="post" action="article-{ARTICLE[id]}#postcomment">
+			<form method="post" action="article-{ARTICLE[id]}?comments=enabled#commentsanchor">
 				<input type="hidden" name="article_id" value="{ARTICLE[id]}" />
 				<input type="hidden" name="time" value="{FORM[time]}" />
 				<input type="hidden" name="token" value="{FORM[check][token]}" />
@@ -89,7 +89,7 @@
 						<td><input name="code" id="commentcode" /><em>&nbsp;{TR: Sorry, but you must answer this easy sum as a SPAM prevention measure.}</em></td</tr>
 {ENDIF}
 					<tr><th>&nbsp;</th>
-						<td><input type="submit" name="post" value="{TR:Submit Comment}" class="submit" /></td></tr>
+						<td><input type="submit" name="commentpost" value="{TR:Submit Comment}" class="submit" /></td></tr>
 					<tr><th>&nbsp;</th>
 						<td class="formdisclaimer"><p>{TR:You should be aware that all information on blog site is © Terry Ellison 2010 and made open access under the <a href="http\://creativecommons.org/licenses/by/3.0/">Creative Commons Artistic Licence</a>.}</p>
 						<p><b>{TR:Your comments will only publicly available after you have carried out email confirmation.  Your email address will only used for this purpose and is not made public.}</b></p>

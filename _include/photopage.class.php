@@ -180,7 +180,7 @@ class PhotoPage extends Page {
 				$db->updatePhotoCnt( $album );
 
 				# After a sucessful delete, switch to album view
-				header( "Location: photo-album-$album" );
+				$this->setLocation( "photo-album-$album" );
 				return; # bypass this output because photoAlbum has done this!
 
 			} else {

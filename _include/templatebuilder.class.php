@@ -229,7 +229,7 @@ foreach ( explode (':','$wantedVars') as \$v) {
 	 * object property can be used.
 	 */
 	private function transformCallback( $matches ) {
-debugVar('m', $matches );
+#debugVar('m', $matches );
 		// The two match patterns return 3 and 2 matches resp, so the count is used to desciminate
 		if (count( $matches ) == 3) {
 			// A \ infront of an uppercase word disables variable substitution
@@ -270,7 +270,7 @@ debugVar('m', $matches );
 			'/(\b|\\\\) ([A-Z] [A-Z0-9_]*) \b/x',
 			'/ \[ (\w+) \] /x',			
 		);
-debugVar('from', $from);
+#debugVar('from', $from);
 		switch( sizeof( $parse ) ) {
 
 			case 2:						# Keywords with no arguments

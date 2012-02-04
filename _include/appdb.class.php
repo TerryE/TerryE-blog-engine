@@ -45,11 +45,10 @@ class AppDB extends mysqli {
 		$this->query		= array();
 		$this->tables		= array();
 
-		foreach( $this->querySet(
-			"SELECT TABLE_NAME AS name FROM information_schema.tables 
-			 WHERE TABLE_SCHEMA='$db' AND TABLE_NAME LIKE '{$this->tablePrefix}%'" )
+		foreach( $this->querySet( "SHOW TABLES LIKE '{$this->tablePrefix}%'" )
 			as $table) {
-			$this->tables[substr($table['name'],strlen($this->tablePrefix))] = TRUE;
+			$v = array_values( $table );
+			$this->tables[substr( $v[0], strlen($this->tablePrefix) )] = TRUE;
 		}
     }
 

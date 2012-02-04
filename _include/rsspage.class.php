@@ -38,13 +38,13 @@ class RssPage extends Page {
 			foreach( $articles as &$article) {
 				$article['title']	= strip_tags( html_entity_decode( $article['title'], ENT_QUOTES, 'UTF-8' ) );
 
-				$details			= $this->convertArticleRefsToAbsolute( $article['details'] );
+				$details			= $article['details'];
 				$summary			= substr( $details, 0, $article['trim_length'] );
 
 				$article['summary']	= $this->convertArticleRefsToAbsolute( $summary, $article['id'] );
 				$article['details']	= $this->convertArticleRefsToAbsolute( $details, $article['id'] );
 
-				$pubDate = max( $pubdate, $article['date_edited'] );
+				$pubDate = max( $pubDate, $article['date_edited'] );
 			}
 			unset( $article );
 

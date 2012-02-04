@@ -96,7 +96,7 @@ class AppSourceUtils {
 
 		$cacheDir	= AppContext::get()->cacheDir;
 		$incDir		= AppContext::get()->includeDir;
-error_log ( "Build including $match[2]" );
+#error_log ( "Build including $match[2]" );
 
 		if( $match[1] == 'class' ) {
 
@@ -122,7 +122,7 @@ error_log ( "Build including $match[2]" );
 				$fileName	= ( file_exists( $cacheDir . $fileName ) ? $cacheDir : $incDir ) . $fileName;
 				// strip the leading <?php tag.  The trailing close tag is already omitted by convention.
 				$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', file_get_contents( $fileName ), 1 );
-error_log ( "Build $className = ". strlen($incSource). ' bytes' );
+#error_log ( "Build $className = ". strlen($incSource). ' bytes' );
 
 				return "if( !in_array( '$className', get_declared_classes() ) ) { \n$incSource }";
 			} else {

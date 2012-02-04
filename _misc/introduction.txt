@@ -1,25 +1,46 @@
 /*
- * Copyright (C) 2006-2012 by Terry Ellisom
+Copyright (C) 2006-2012 by Terry Ellisom
  *
- * Permission to use, copy, modify, and distribute this software and its
- * documentation under the terms of the GNU General Public License is hereby 
- * granted. No representations are made about the suitability of this software 
- * for any purpose. It is provided "as is" without express or implied warranty.
- * See the GNU General Public License for more details.
+Permission to use, copy, modify, and distribute this software and its
+documentation under the terms of the GNU General Public License is hereby 
+granted. No representations are made about the suitability of this software 
+for any purpose. It is provided "as is" without express or implied warranty.
+See the GNU General Public License for more details.
  */
 /*! 
 \mainpage 
 
-\section Introduction Introduction
+\section contents Contents
 
-I decided to implement my own blog in 2006 and in <a href="http://blog.ellisons.rg.uk/article-6">
-this early article</a> I discussed why I chose the Eggblog blog engine.  However, I was 
-disatisfied with some of the Eggblog features and I disliked the Eggblog V4 implementation, 
-so I decided to do was a total rewrite of the blog engine as a programming project.  This 
-project of implementing my "Version 2" engine became the theme of 
-<a href="http://blog.ellisons.org.uk/search-blogEngine"> many blog articles</a>.  However during 
-its first year's use  I realised that there were many aspects of the architecture that in 
-hindsight I would have done differently, so I have developed this Version 3 as a full
+ - \ref introduction
+ - \ref Economy
+	- \ref econcxt
+    - \ref econDB
+    - \ref econTemplate
+
+ - \ref Efficiency
+    - \ref source_processing
+    - \ref templating
+    - \ref htmlCaching
+    - \ref HTMLandCSSoptimisation
+
+ - \ref Authoring
+	- \ref OOoWriter
+	- \ref tinymce
+
+ - <a href="annotated.html"><b>Classes</b></a>
+
+ - \ref functions.php
+
+\section introduction Introduction
+
+I decided to implement my own blog in 2006 and in <a href="/article-6">this early article</a> 
+I discussed why I chose the Eggblog blog engine.  However, I was disatisfied with some of the 
+Eggblog features and I disliked the Eggblog V4 implementation, so I decided to do was a total 
+rewrite of the blog engine as a programming project.  This project of implementing my "Version 
+2" engine became the theme of <a href="/search-blogEngine"> many blog articles</a>.  However 
+during its first year's use  I realised that there were many aspects of the architecture that 
+in hindsight I would have done differently, so I have now developed this Version 3 as a full
 refactoring with various enhancements to clear off this bucketlist.
 
 One item on this bucketlist was that I was unhappy with the standard of documentation in my 
@@ -30,7 +51,7 @@ had some other key goals for Version 3:
 
  - <b> \ref Economy</b>. I hate long-winded coding styles.  I have had a number
    of debates with the phpBB designers about why phpBB seems to have adopted a style that takes
-   ~100 lines to implement a function that could be done in ~10 lines.  This philopsohy seems 
+   ~100 lines to implement a function that could be done in ~10 lines &ndash; an approach that seems 
    to regard verbosity as equivalent to clarity.  My belief is that the implementation effort is 
    directly proportional to the length of the code and ditto the error rates.  Putting thought 
    into how you can ensure that the implementation is crisp, clean and orthogonal \a before you
@@ -38,8 +59,8 @@ had some other key goals for Version 3:
    long, yet it provides comparable functionality to Wordpress, but with a materially better 
    runtime performance in a Webfusion environment.
 
- - <b> \ref Efficiency</b>.  I have worked with and customised large open-source PHP applications  
-   such as phpBB, Mediawiki and Wordpress. and my experience is that they perform poorly on a 
+ - <b> \ref Efficiency</b>.  I have worked with and have customised large open-source PHP applications  
+   such as phpBB, Mediawiki and Wordpress, and my experience is that they perform poorly on a 
    shared hosting environment.  For example, in a LAMP environment they all require the use of
    \c mod_php and a PHP Opcode accelerator such as \c APC to get acceptable user response;
    and these modules just aren't available on a typical shared service.  There is no reason 
@@ -55,10 +76,183 @@ had some other key goals for Version 3:
 The corresponding sections referenced in the above list give a general overview and discussion on
 this aspect of the design, with the meat of the code-specific documentation covered in the Class List
 
-\section Economy Economy of implementation
+\page Economy Economy of implementation
 
-\section Efficiency Efficient performance on a shared hosting environment
+\section econcxt A Unified Context Layer
 
-\section Authoring Authoring experience
-test
+In this application I have stuck with a more traditional request-response service model rather 
+than moving to a full MVC framework and model, but I wanted to provide a unified and simple
+access toolset for the \a context of any request that a given script is implementing.  The     
+AppContext class provides this blog/user/page context for the application, that is the
+(quasi) static configuration within which script must respond to this particular web request.  
+This context is derived from three components:
+
+ -  A set of configuration parameters are maintained in the database \b config table, which 
+    contains a set of name / value pairs.
+
+ -  A safe encapsulation providing a unified access mechanism for HTTP get/post/file and cookie
+    variables.  
+
+ -  Some derived parameters based on user-specific cookies which permit persistent user logon, etc..   
+
+A key design objective here to make referencing such context parameters simple-to-code and robust.
+For example, the AppContext::__get() method overloads the context property access and this handles
+the \c isset() or \c htmlentities() scrubbing issues, so the application code can simply and safely 
+accessing the URI parameter \b page by the code \c $cxt->page without this wrapper logic. For more 
+details see \ref AppContext.
+
+\section econDB A Unified Database Layer
+
+The standard \b mysqli class requires 4-6 line code patterns for most access functions, and if the
+parameters are untrusted even more are required to prevent injection attacks.  Why use ten lines of 
+code when one will do?  It is just as efficient, but is easier to understand with less chance of 
+making an error.  The \ref AppDB class extends the standard mysqli interface, and provide 
+a set of methods to achieve this for 95% queries. AppDB::declareFunction() is used during page 
+initialisation to declare query functions to be used in that page, so for example in class 
+searchPage:
+\code
+		$this->db->declareFunction( array(
+'searchKeyword'		=> "Set=SELECT id, date, title FROM :articles 
+							WHERE keywords LIKE '%#1%' ORDER BY date DESC",
+'searchQuestion'	=> "Set=SELECT id, date, title FROM :articles 
+					        WHERE MATCH (title,keywords,details) AGAINST ('#1' IN BOOLEAN MODE) 
+							ORDER BY date DESC",
+		) );
+\endcode
+so the result for a question is retrieved by a simple method call:
+\code
+		$matches = $this->db->searchQuestion( $question );
+\endcode 
+
+Again any arguments are scrubbed in the Database Layer to avoid injection attacks, so the 
+application does not need to embed this code.  For more details see \ref AppDB.
+
+\section econTemplate A Unified Template Layer
+
+Separating the business logic from its presentation makes a lot of sense and simplifies the 
+structure of the application.  Using a templating engine such as Smarty achieves this and 
+considerably simplifies the application code.  However as I describe in class TemplateBuilder, I have 
+built and use my own engine.  Why do this if Smarty a field leader and can achieve my economy goals?  
+My answer is that my engine provides 90% of what Smarty could possibly offer in this usecase, and 
+possibly 100%, but with less than 5% of the code base and more to the point &mdash; materially faster 
+in a shared hosting environment.  For more details on the templating engine see class \ref AppContext. 
+For the efficiency discussion see \ref templating.
+
+\page Efficiency Efficient performance on a shared hosting environment
+
+I have done various tuning studies that I have written up as blog articles and which relate to the 
+drivers for my adopting this architecture including the following:
+
+ - <a href="/article-56">The Anatomy and Timing of a Web Request – Part II</a>
+ - <a href="/article-53">phpBB Performance – Reducing the script load overhead</a>
+ - <a href="/article-44">More on optimising PHP applications in a Webfusion shared service</a>
+ - <a href="/article-34">Performance in a Webfusion shared service and guidelines for optimising 
+      PHP applications</a>
+
+Have a browse if you are interested, but the key points from these are:
+
+ - In an suPHP enviroment, PHP image activation occurs for every script and this adds a minimum 
+   100 mSec delay.  (See the next section).
+ - No opcode or memory caching is available, so any reference script files and data need to be 
+   loaded / compiled on a per request basis.
+ - The main overhead in doing so is not the script compilation (~400K lines/sec) and neither the
+   costs of executing PHP scripts themselves (~20M statements/sec) but the cost of opening and
+   reading the files which contain the scripts and files (~2K file open/sec if precached in the
+   server file cache, falling to ~30 file open/sec if the system needs to access the underlying
+   NAS which stores the files on physical disk).
+ - So the main take home points are:
+   -  Open as few application script / data files as possible during each request.
+   -  Hoist I/O expensive operations out of per-request processing.
+   -  Avoid script execution where possible either by ensuring that local caching is taking place
+      on the client's browser or HTML caching which is accessed directly by Apache at the server.
+
+What I had set about doing is to create a framework where I can achieve these objectives whilst
+at the same time not compromising application coding structure and simplicity.  The following
+sections describe the components which help achieve this objective.
+
+\section source_processing Source processing
+
+I have administer a number of <a href="www.phpbb.com">phpBB</a> forums and became familiar with
+its use of a templating engine (which I discussed in more detail in <a href="/article-35">this</a> 
+article) and stategy of code compilation into a cache directory.  As I discuss in the preceding 
+section, I also identified a need for code aggregation for performance reasons and I also use 
+dynamic code generation for my HTML parsing engine. I decided that by systemising such an approach 
+in my application framework, this would simplify and rationalise many of these issues, as well as
+deliver performance dividends in a shared hosting service environment.
+
+In practice \a all runtime code is executed from a cache directory and a "build" hook is used 
+to transform the original source version:
+ -  All application functionality in implement by classes which are autoloaded  through the standard
+    PHP autoload framwork.
+ -  The autoloader loads classes from the \b _cache directory by default.  
+ -  If a cache miss occurs — that is the class isn't in the \c _cache directory — then the 
+    autoloader invokes a \a builder class to create this cached copy.  
+ -  All builder classes are loaded directly from an \b _include directory (using a naming convention
+    based on the class name.  (Using this second directory isn't a material performance as building
+    is a rare activity, but doing so avoids recursive issues of building builders.
+ -  A standard static method <tt>build($className)</tt> is called within the builder to construct 
+    the required cache copy used for this and future class loads.  What the builder does is left 
+    to the builder class, making \b __autoload() code itself is very straightforward.
+
+Such an approach might seem to be rather convolved on first consideration, but it has proven to be 
+extremely flexible, effective and efficient:
+ -  The builder is typically called once per S/W-release per object to create the \b _cache copy. 
+    Processing carried out in the builder is therefore hoisted out of the per request or per function 
+    call runtime overhead entirely.
+ -  Having a separate builder phase removes the need to use PHP runtime \b eval() and \b create_function() 
+    constructs.  These can incur a high runtime penalty if used carelessly, and they can also create 
+    exploitable vulnerabilities in applications. (Some shared service environments use  
+    <tt>disable_functions = eval,create_function</tt> in the PHP ini configuration.
+ -  This also facilitates a safe model for dymanic code generation used by most output templates and 
+    for use of configuration data driven code generation.  Moreover, as the "dynamic" output is
+    written to a file in the cache directory, this generated code is immediately and perminently 
+    available to the programmer for debugging, in a way that code in embedded string variables is not.
+ -  Lastly, this also enables the use of liberal code commenting and splitting of code into sensible
+    file units for development purposed, yet aggregate them into runtime units to eliminate the bulk 
+    of the runtime overhead on shared hosting services (which don't employ PHP opcode caches and must
+    therefore recompile the relevant application portions for each request. (See <a href="/article-44">
+    More on optimising PHP applications in a Webfusion shared service</a> for further discussion of 
+    this and the associated <a href="/search-Performance">Performance</a> articles.)
+
+Examples of where such loaders are employed in this blog application include:
+ -  TemplateBuilder as introduced in \ref templating.
+ -  HtmlBuilder. I need to clean up HTML content submitted as comments or article content. Because 
+    of the limitations of the Webfusion runtime environment which doesn't provide a stanard library
+    to do this, I have a "roll-your-own" implementation inspired by the equivalent TinyMCE HTML 
+    scrubber which scrubs submitted HTML content to limit the HTML content stored as article or 
+    comment content to a restricted grammar which is safe for inclusion in any HTML emitted as part 
+    of my blog.  I can't use a standard library here, but the HtmlBuilder can parse the HTML 
+    configuration maps and generate the required data driven code to transform itself into an 
+    \b HTML_utilities class stored in \b _cache.  This avoid the need to replicate Javascript-syle 
+    dynamically generated enclosures, which doesn't map efficiently onto a server-based PHP
+    environment.  
+ -  DefaultBuilder.  The default builder moves the source content from the corresponding \b _include
+    file, optionally aggregating any required supporting classes into the same file to mimise the
+    number of script file opens needed at runtime.  It can optionally strip out all of the commenting 
+    and redundant whitespace to reduce the chached filesize for loading. (This makes no changes at 
+    the PHP generated bytecode level.
+
+\section templating My Templating engine
+
+TBC. See TemplateBuilder.
+	
+\section htmlCaching HTML caching
+
+TBC. See <a href="/article-45">A lightweight HTML cache for a Webfusion shared service</a>.
+
+\section HTMLandCSSoptimisation HTML and CSS optimisation 
+
+TBC
+
+\page Authoring Authoring experience
+
+TBC
+
+\section OOoWriter Using OpenOffice.org Writer
+
+TBC
+
+\section tinymce Using TinyMCE
+
+See
 */

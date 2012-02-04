@@ -108,9 +108,9 @@ class AppContext {
 
 		// Set the request variable count, and set the cacheable flag if the user is a guest, there
         // are no request parameters other than the page parameter and HTML caching is enabled.
-		$a->requestCount  = count( $_REQUEST );
+		$a->requestCount  = count( $_GET ) + count( $_POST );
 		$a->HMTLcacheable = $a->enableHTMLcache && $a->requestCount == 1 && !($a->isAdmin);
-			
+
 		// Decode the requested page. Note that hyphenation is embed arguments.  
 		// So the URI for Article 1 is "article-1" etc.
 		$parts			= explode( '-', ($a->page ? $a->page : 'index' ) );
@@ -140,6 +140,7 @@ class AppContext {
 	 *     -  \b H The type is Hex string   
 	 *     -  \b A The type is an Array (used in tabular forms)   
 	 *     -  \b S The type is string
+	 *     -  \b R The type is Raw string (no HTML escaping is done)   
 	 *     -  \b F The type is (uploaded) file
      *
      *  -  The variable name is a lowercase word.
@@ -149,7 +150,7 @@ class AppContext {
 	public function allow($varList) {
 
 		$varList	= str_replace( ',', '', $varList );
-		$va 		= preg_split( "/([,]?[#:*GPCF][ISAHF]?)/", $varList, -1,  PREG_SPLIT_DELIM_CAPTURE);
+		$va 		= preg_split( "/([,]?[#:*GPCF][ISAFHR]?)/", $varList, -1,  PREG_SPLIT_DELIM_CAPTURE);
 		$a 			= $this->attrib;
 
 		array_shift( $va );
@@ -195,9 +196,7 @@ class AppContext {
 					case 'I':
 						settype( $result, "integer" );
 						break;
-					case 'A':
-					case 'H':
-					case 'F':
+					case 'A': case 'F': case 'H': case 'R':
 						break;
 				}
 			}

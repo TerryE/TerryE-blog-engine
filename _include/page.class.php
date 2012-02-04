@@ -39,6 +39,9 @@ class Page {
 		) );
 
 		$this->init();
+//$redirects = array();
+//foreach( $_SERVER as $k=>$v ) { if( substr($k,0,9)=='REDIRECT_' ) { $redirects[substr($k,9)]=$v; } }
+//debugVar( 'redirects', $redirects );
 	}
 
 	/**
@@ -252,7 +255,7 @@ class Page {
 	/**
 	 * Purge HTML cache directory
 	 */
-	function purgeHTMLcache() {
+	public function purgeHTMLcache() {
 		return $this->unlinkDirFiles( $this->cxt->HTMLcacheDir, '.html$' );
 	}
 
@@ -278,4 +281,14 @@ class Page {
 		}
 		return $cnt;
 	}
+
+	/**
+	 * Issue Location header to force refresh on (new) page.  
+	 * @param $newLocation    Relative location to go to.
+	 */
+	public function setLocation( $newLocation ) {
+ 		header( "Location: http://{$this->cxt->server}/$newLocation" );
+		header( 'Status: 302' );
+	}
+
 }

@@ -19,14 +19,11 @@ class Dispatcher {
 	 */
 	static function dispatch() {
 
-#debugVar('Declared classes', get_declared_classes());
 		ini_set( "arg_separator.output", "&amp;" );
 		ini_set( 'error_reporting', E_ALL  |  E_STRICT );
 		ini_set( 'display_errors', False );
 
 		try{
-			pageTime();
-
 			$cxt = AppContext::get();
 
 			switch ( $cxt->page ) {
@@ -49,6 +46,6 @@ class Dispatcher {
 		} catch (Exception $e) {
 			error_log ( $e->getMessage() );
 		}
-		pageTime( $cxt->page );
+		pageTimer( "Page {$cxt->page} completed" );
 	}
 }

@@ -1,48 +1,104 @@
+Changes at 3.1.0 + 3.1.1
+
+AdminPage, Sync
+	Fix coorect return of sync status codes
+
+AppContext
+	Add Raw post parameter type, user used by Sync::server.  $a->requestCount now set as count( $_GET )
+    + count( $_POST ) as $_REQUEST includes $_COOKIE elements by default.
+
+AdminPage, ArticlePage, AuthorArticle, PhotoPage, Page
+	Add Page::setLocation to issue correct RFC-complianty Location: headers and replace header
+    calles in pages which use this.
+
+AppDB
+    Replace query "SELECT TABLE_NAME AS name FROM information_schema.tables WHERE TABLE_SCHEMA='$db' 
+    AND TABLE_NAME LIKE '{$this->tablePrefix}%'" by a "SHOW TABLES LIKE '{$this->tablePrefix}%'" as
+    the former took 2.5s and the latter ~1mSed on the webfusion system !!
+
+AuthorArticle
+	Add TRUE return flag to the  $this->page->output( 'confirm_email', TRUE ) call 
+
+Dispatcher
+	Uses new pageTimer() for transaction microtiming
+
+Page
+	add setLocation() function which does an RFC conformant redirect.  Also update uses of 
+	header( "Location:...) to use $this->setLocation()
+	
+functions.php
+	Debug log destination is now a config paramter.
+    pageTimer() now prints baseline "YYYY-MM-DD hh:mm:ss - Transaction timer set at 0 mSec" at first 
+    call based on START_TIME.  Subsequent calls log mSec offset from the START_TIME.
+
+index.php
+	Add the define START_TIME constaining the start microtime()
+
+screen.css, print.css 
+	Delete and replace by all.css
+
+all.css
+	Which uses @media screen/print {} to combine the above an save a file load.
+
+general
+	Clean-up / remove redundant commented out error logging for debug.
+
+doxfile
+	Add generation of headers
+
+_misc/introduction.txt
+	Added new custom page to documentaion
+
+TinyBuilder
+	Remove and replace by symlink for tinymce_php_gzip.php
+
+tiny_mce_gzip.php
+	Bugfix to the version that I released to TinyMCE.  The document root should be based on the
+    server variable SCRIPT_URL rather than SCRIPT_NAME so that the client-side is consistent
+	with any rewrite strategy.
+
 Changes at V3.0.10
  
-AbstractBuilder:
+Class AbstractBuilder
 	Shouldn't be abstract class -- replace by interface.  All Page sub-classes now "implements" 
 	rather than "extends" Page.
-AdminPage:      
+Class AdminPage      
 	Add purge, sync sidebar and update_config functions.  Sidebar customisation comes from 
 	designated hidden article.
-AppContext:
+Class AppContext
 	Add hidden options for parameters with "_" prefix
 	HTML cacheable status hoisted to context calculation and set in HMTLcacheable parameter
 	Add "A" type for parameters to allow array parameters in post.
 	Rename "keywords" config parameter to "_keywords"
 	Add "sidebarCustomID" and "_sidebarCustom" parameters.  sidebarCustomID desinates the
 	hidden sidebar article, _sidebarCustom caches the custom content
-ArchivePage:
+Class ArchivePage
 	Remove m and y parameters and replace by client-side javascript to allow HTML caching
 	of archive page.
-ArticlePage:
-AuthorArticle:
+Class ArticlePage and class AuthorArticle
 	Add header table to inline article edit function to allow update of article fields: 
 	title, flag, keywords, date.
 	**** need to remember: page HTML cache cleanup **** 
-Dispatcher:
+Class Dispatcher
 	Builder prefix for functions remapped from unlinkDirFiles to getTranslation
-Functions:
-	Remove debug error logging
+Functions
+	Remove debug error logging from __autoload()
 	Remove function unlinkDirFiles
-	****Todo**** debug log destination a config paramter
-Page:
+Class Page
 	Add support for automatic issuing of "Content-Type" header.  Defaults to 
 	"text/html; charset=UTF-8", but can be overridden by setting the contentType property
 	Change parameters to output method in line with hoisting HTML caching to Context
 	By default output() now issues Content-Type header and page content.
 	(All sub-classes modified to use "implements" and output() method no longer echoed.
 	unlinkDirFiles() and unlinkDirFiles() now Page methods
-RssPage:
+Class RssPage
 	Rewritten to make blog RSS feed conform to RSS 2.0
-Sitemap:
+Class Sitemap
 	Base 3.0 implementation added.
-Sync:
+Class Sync
 	Use remoteServer config variable as sync destination
-	**** Still have some issues here Md5 failure ****
     **** Still have issues with sync to V2 setting flag=1
-TemplateBuilder:
+Class TemplateBuilder
 	Add ability to escape uppercase word in substitution fields with a \ escapes to prevent 
 	variable substition force interpretation as a literal, e.g. "\UTF-8" is interpreted as 
 	"UTF-8" rather than \$varUTF-8
@@ -60,6 +116,3 @@ sitemap.html
 	as per class  Sitemap
 trailer.html
 	Add support for hidden article as a container for localalused sdebar content.
-\ref Introduction
-	Added new custom page to documentaion
-

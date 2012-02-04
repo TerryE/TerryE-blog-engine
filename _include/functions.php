@@ -23,37 +23,29 @@
  */
 function __autoload( $className ) {
 
-#error_log( "Autoloading $className" );
-
 	$fileName	= preg_replace( '/[^a-z]/', '.', strtolower( $className ) ) . '.class.php';
 	$incFile	= INC_DIR . $fileName;
 	$cacheFile	= CACHE_DIR . $fileName;
 
 	if ( strpos( $fileName, 'builder.class.php' ) ) {
 		// include the _include version of the builder class
-#error_log( "Requiring $incFile" );
 		require( $incFile );
 	} else {
 		// include the _cache version if it exists
 		if( ( @include( $cacheFile ) ) != 1 ) {
 			// otherwise determine the builder class
-#error_log( "Class filename $fileName" );
 			$builderClass	= preg_match( '/(\w[a-z]*)[A-Z]\w*/', $className, $m) ?
 				$m[1] : 'default';
-#error_log( "BuildRoot1 $builderClass" );
 
 		    if( defined( 'DEFAULT_BUILDER_PATTERN' ) &&
 			    preg_match( '/' . DEFAULT_BUILDER_PATTERN . '/', $className, $m) ) {
 				$builderClass = 'default';
 			}
-#error_log( "BuildRoot2 $builderClass" );
 
 			// Call the builder to create the _cache version (this may trigger its autoload)
-#error_log( 'Calling ' . ucfirst( $builderClass ) . 'Builder::build' );
 			$loadFile = call_user_func( array( ucfirst( $builderClass ) . 'Builder', 'build'), 
 						                       $className );			
 			// Now load the built version; "require" is used because a load failure is fatal this time.
-#error_log( "Now require $loadFile" );
 			require( $loadFile );
 		}
 	}
@@ -106,7 +98,11 @@ function getTranslation( $phrase ) {
  * @param $msg   Message to be output to debug log
  */
 function debugMsg( $msg ) {
-	error_log( $msg . "\n", 3, "/tmp/debug.log" );
+    static $debugFile=NULL;
+    if( !isset( $debugFile ) ) {
+		$debugFile = AppContext::get()->debugFile;
+	}
+	error_log( $msg . "\n", 3, $debugFile );
 }
 
 /**
@@ -120,17 +116,18 @@ function debugVar($title, $var) {
 
 /**
  * Simple debug transaction timer
- * @param $pageName Name of page being displayed 
+ * @param $eventName Timer event being displayed 
  */
-function pageTime( $pageName=NULL ) {
+function pageTimer( $eventName ) {
     static $u0, $s0;
-	if( is_null( $pageName ) ) {
-		list( $u0, $s0 ) = explode( " ", microtime() );
-	} else {
-		list( $u1, $s1 ) = explode( " ", microtime() );
-        // Do (s1-s0) ... to avoid loss of precision 
-		$elapsed = ( ( (float)$s1 - (float)$s0 ) + ( (float)$u1 - (float)$u0 ) ) * 1000;
-		debugMsg( sprintf( "Page %s completed in %u mSec", $pageName, (int) $elapsed ) );
-	}
-}
 
+	if( is_null( $pageName ) ) {
+		list( $u0, $s0 ) = explode( " ", START_TIME );
+		debugMsg( date( 'Y-m-d H:i:s', $u0 ) .  " - Transaction timer set at 0 mSec" );
+	}
+
+	list( $u1, $s1 ) = explode( " ", microtime() );
+    // Do (s1-s0) ... to avoid loss of precision 
+	$elapsed = ( ( (float)$s1 - (float)$s0 ) + ( (float)$u1 - (float)$u0 ) ) * 1000;
+	debugMsg( sprintf( "\t%s at %u mSec", $eventName, (int) $elapsed ) );
+}

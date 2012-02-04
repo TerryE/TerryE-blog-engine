@@ -16,8 +16,8 @@ class AdminPage extends Page {
 		$subOpt = $cxt->subOpt;
 
 		// Define which Get, Post, and user variables are allowed
-		$cxt->allow('#Iid#uid#Saction:login:loginemail:password:create:newtitle:' . 
-					'check:purge:sync:sync_content:syncsidebar:Harticle_content:update_config:Aconfig' );			
+		$cxt->allow(':login:loginemail:password:update_config:Aconfig:create:newtitle:purge' .
+					':syncsidebar#Iid#uid#Saction:sync' );
 
 		// Define AppDB access functions used in AdminPage
 
@@ -49,7 +49,7 @@ class AdminPage extends Page {
 			} else {
 				$cxt->set( 'user', $userData['name'] );
 				$cxt->set( 'token', md5( $cxt->salt . md5( $cxt->password ) ) ); 
-				header( "Location: admin" );
+				$this->setLocation( 'admin' );
 				return;
 			}
 
@@ -60,10 +60,9 @@ class AdminPage extends Page {
 			foreach( $oldConfigs as $k => $v ) {
 				if( isset( $newConfigs[$k] ) && $newConfigs[$k] != $v ) {
 					$db->updateConfigValue( $k, $newConfigs[$k] );
-error_log( "updating $k to $newConfigs[$k]" );
 				}
 			}
-			header( "Location: admin" );
+			$this->setLocation( 'admin' );
 			return;
 
 
@@ -78,7 +77,7 @@ error_log( "updating $k to $newConfigs[$k]" );
 			#
 			# If the article is successfully created, a redirect to the new article is issued
 			#
-			header( "Location: " . ( isset( $check_id ) ? "article-$check_id" : "admin" ) );
+			$this->setLocation( isset( $check_id ) ? "article-$check_id" : 'admin' );
 			return;
 
 		// Process a purge cache request
@@ -107,7 +106,7 @@ error_log( "updating $k to $newConfigs[$k]" );
 		} elseif( $subPage == 'logout' ) {
 			$cxt->clear( 'token' );
 			$cxt->clear( 'user' );
-			header( "Location: admin" );
+			$this->setLocation( 'admin' );
 			return;
 
 		// Process the admin-comment page request from RSS feed or confirm email.
@@ -153,15 +152,22 @@ error_log( "updating $k to $newConfigs[$k]" );
 
 		// Process the admin-sync page request from the working website synchronise request.
 		} elseif( $subPage == 'sync' ) {
-			if( $cxt->check == md5( $cxt->salt . $cxt->sync_content ) ) {
+
+			$cxt->allow( ':check:Rsync_content:last_synced:next_synced' );
+			$syncContent = $cxt->sync_content;
+
+			if( $cxt->check == md5( $cxt->salt . $syncContent ) ) {
 /*????*/		header( 'Content-Type: application/plain' );  # The O/P is a gzipped serialised response
-				echo Sync::server( $cxt->sync_content );
+				$response = Sync::server( $cxt->sync_content, $cxt->last_synced, $cxt->next_synced );
 				$this->purgeHTMLcache();
 
 			} else {
-				header( 'Content-Type: application/gzip' );  # The O/P is a gzipped serialised response
-				echo gzcompress( serialize( array ( array( 'id' => 0, 'status' => 'MD5 mismatch' ) ) ) ); 
+				$response = array ( array( 'id' => 0, 'status' => 'MD5 mismatch' ) ); 
 			}
+			
+			header( 'Content-Type: application/gzip' );  # The O/P is a gzipped serialised response
+			echo gzcompress( serialize( $response ) );
+/// @todo  admin/sync is still not giving a proper status response
 			return;
 		}
 
