@@ -1,7 +1,25 @@
+Changes at 3.1.2
+================
+
+AppContext
+	includeDir is now a search list
+
+DefaultBuilder and AppSourceUtils
+	Now use includeDir search list to scan for autoload files allowing a directory hierachy to be 
+    implemented for the included directories.
+
+TextlocalSMS added
+	Sends SMS SMS using the TextLocal service.
+
+Page
+	Page::invalidPage() now issues a 404 instead of an extended error in the case of an invalid 
+	request if $cxt->remoteServer is blank (i.e. this is a production instance).
+
 Changes at 3.1.0 + 3.1.1
+========================
 
 AdminPage, Sync
-	Fix coorect return of sync status codes
+	Fix correct return of sync status codes
 
 AppContext
 	Add Raw post parameter type, user used by Sync::server.  $a->requestCount now set as count( $_GET )
@@ -58,6 +76,7 @@ tiny_mce_gzip.php
 	with any rewrite strategy.
 
 Changes at V3.0.10
+==================
  
 Class AbstractBuilder
 	Shouldn't be abstract class -- replace by interface.  All Page sub-classes now "implements" 

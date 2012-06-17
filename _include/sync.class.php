@@ -146,7 +146,7 @@ class Sync {
 		}
 
 		$db->updateLastSyncTime( $dateNextSynced );
-		AuthorArticle::get()->regenKeywords();
+		AuthorArticle::get($this)->regenKeywords();
 
 		return $outputArticles;
 	}

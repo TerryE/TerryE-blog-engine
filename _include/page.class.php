@@ -140,7 +140,7 @@ class Page {
 
 			// write out copy of output to HTML cache file if cacheable and not $returnOP
 			if( $cxt->HMTLcacheable && !$returnOP ) {
-				$HTMLfileName = $cxt->HTMLcacheDir . '/'. $cxt->fullPage;
+				$HTMLfileName = $cxt->HTMLcacheDir . $cxt->fullPage;
 				file_put_contents( $HTMLfileName . $cxt->pid, $output );
 				rename( $HTMLfileName . $cxt->pid, $HTMLfileName . '.html' );
 			}
@@ -230,26 +230,27 @@ class Page {
 	/**
 	 * Common method to display invalid page debug
 	 */
-	public function invalidPage(){
+	public function invalidPage() {
 
 		$cxt = $this->cxt;
-/*	if( $blog_server == 'webfusion' ) {
-		header( 'HTTP/1.0 404 Not Found' );
-		header( 'Content-Type: text/html' );
-		echo "<html><head><title>Invalid Page</title><head><body><h1>Page not found</h1></body></html>";
-	} else { */
-		$this->assign( array (
-			'requested_page' => $cxt->page,
-			'sub_page'   => $cxt->subPage,
-			'sub_option' => $cxt->subOpt,
-			'cookies'    => var_export( $_COOKIE, true ),
-			'gets'       => var_export( $_GET, true ),
-			'post'       => var_export( $_POST, true ),
-			'server'     => var_export( $_SERVER , true ),
-			'page'       => var_export( $this, true ),
-			) );
-		$cxt->set( 'HMTLcacheable', false ); // Disable HTML caching for invalid pages 
-		$this->output('invalid');
+		if( $cxt->remoteServer == '' ) {
+			header( 'HTTP/1.0 404 Not Found' );
+			header( 'Content-Type: text/html' );
+			echo "<html><head><title>Invalid Page</title><head><body><h1>Page not found</h1></body></html>";
+		} else {
+			$this->assign( array (
+				'requested_page' => $cxt->page,
+				'sub_page'   => $cxt->subPage,
+				'sub_option' => $cxt->subOpt,
+				'cookies'    => var_export( $_COOKIE, true ),
+				'gets'       => var_export( $_GET, true ),
+				'post'       => var_export( $_POST, true ),
+				'server'     => var_export( $_SERVER , true ),
+				'page'       => var_export( $this, true ),
+				) );
+			$cxt->set( 'HMTLcacheable', false ); // Disable HTML caching for invalid pages 
+			$this->output('invalid');
+		}
 	}
 
 	/**

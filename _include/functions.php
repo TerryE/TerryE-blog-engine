@@ -101,7 +101,7 @@ function debugMsg( $msg ) {
     static $debugFile=NULL;
     if( !isset( $debugFile ) ) {
 		$debugFile = AppContext::get()->debugFile;
-	}
+	}	
 	error_log( $msg . "\n", 3, $debugFile );
 }
 
@@ -121,9 +121,9 @@ function debugVar($title, $var) {
 function pageTimer( $eventName ) {
     static $u0, $s0;
 
-	if( is_null( $pageName ) ) {
+	if( is_null( $s0 ) ) {
 		list( $u0, $s0 ) = explode( " ", START_TIME );
-		debugMsg( date( 'Y-m-d H:i:s', $u0 ) .  " - Transaction timer set at 0 mSec" );
+		debugMsg( date( 'Y-m-d H:i:s', $s0 ) .  " - Transaction timer set at 0 mSec" );
 	}
 
 	list( $u1, $s1 ) = explode( " ", microtime() );

@@ -68,10 +68,17 @@ class AppContext {
 			$a->$param	= $row['config_value'];
 		}
 
-		foreach (array( 'HTMLcacheDir', 'adminDir',  'cacheDir', 'includeDir', 'templateDir' ) as $d) {
+		// For the std dirs, prefix with the rootDir and add trailing /
+		foreach( array( 'HTMLcacheDir', 'adminDir',  'cacheDir', 'templateDir' ) as $d ) {
 			$a->$d = $a->rootDir . DIRECTORY_SEPARATOR . $a->$d . DIRECTORY_SEPARATOR;
 		}
 
+		// includeDir is a searchlist so unpack to array, again each with rootDir prefix and trailing / 
+		$includes 		= array();
+		foreach ( explode( ';', $a->includeDir ) as $d) {
+			$includes[]	= $a->rootDir . DIRECTORY_SEPARATOR . $d . DIRECTORY_SEPARATOR;
+		}
+		$a->includeDir  = $includes;
 		$a->keywordList	= unserialize( $a->_keywords ); 
 		$a->pid			= getmypid();
 

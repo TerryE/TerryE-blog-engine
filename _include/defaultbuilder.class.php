@@ -25,8 +25,18 @@ class DefaultBuilder implements AbstractBuilder {
 
 		$cxt			= AppContext::get();
 #error_log('APP context got' );
-		$fileName		= preg_replace( '/[^a-z]/', '.', strtolower( $className ) ) . '.class.php';
-		$inFile			= $cxt->includeDir . $fileName;
+		$fileName		= preg_replace( '/[^a-z]/', '.', strtolower( $className ) ) . '.class.php';		
+
+		foreach( $cxt->includeDir as $path ) {
+			if( file_exists( $path . $fileName ) ) {
+				$inFile	= $path . $fileName;
+				break;
+			}
+		}
+		if( !isset( $inFile) ) {
+			throw new Exception( "APP: class {$className} not found on include bollocks" );
+		}
+
 		$outFile		= $cxt->cacheDir . $fileName;
 		$debugLevel		= $cxt->debugLevel;
 #error_log("Debug level $debugLevel" );

@@ -67,7 +67,9 @@
 			<form method="post" action="article-{ARTICLE[id]}?comments=enabled#commentsanchor">
 				<input type="hidden" name="article_id" value="{ARTICLE[id]}" />
 				<input type="hidden" name="time" value="{FORM[time]}" />
+      {IF:!LOGGED_ON_ADMIN}
 				<input type="hidden" name="token" value="{FORM[check][token]}" />
+      {ENDIF}
 				<input type="hidden" name="debug" value="false" />
 				<h3>{TR:Post a comment}</h3>
     {IF:FORM[error] != ''} <h4><font style="color: #FF0000; font-weight: bold;">{FORM[error]} </font></h4>{ENDIF}

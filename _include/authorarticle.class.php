@@ -47,7 +47,6 @@ class AuthorArticle {
 'getSameCount'  	=> "Val=SELECT count(*) FROM :comments WHERE date='#1' AND article_id=#2",
 'insertComment'		=> "INSERT INTO :comments ( flag, date, article_id, author, ip, mail_addr, comments ) 
 					    VALUES ('#1','#2','#3','#4','#5','#6','#7')",
-'getCommentId'		=> "Val=SELECT id FROM :comments WHERE date='#1' AND article_id='#2' AND mail_addr='#3' LIMIT 1",
 'updateCommentCnt'	=> "UPDATE :articles a 
 					    SET    comment_count=(SELECT count(*) FROM :comments c WHERE c.article_id=a.id AND c.flag = 1) 
 					    WHERE  a.id=#1",
@@ -502,7 +501,7 @@ class AuthorArticle {
 				( $this->isAdmin ? 1 : 0 ) , $cxt->time, $this->id, $author, 
 				$_SERVER['REMOTE_ADDR'], $mailaddr, $comment
 				);
-			$commentID = $this->db->getCommentId( $cxt->time, $this->id, $mailaddr );
+			$commentID = $this->db->insert-id;
 
 			if( $this->isAdmin ) {
 

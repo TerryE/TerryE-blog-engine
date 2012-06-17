@@ -95,7 +95,7 @@ class AppSourceUtils {
 	static function includeSource ( $match ) {
 
 		$cacheDir	= AppContext::get()->cacheDir;
-		$incDir		= AppContext::get()->includeDir;
+		$incDirs	= AppContext::get()->includeDir;
 #error_log ( "Build including $match[2]" );
 
 		if( $match[1] == 'class' ) {
@@ -119,9 +119,20 @@ class AppSourceUtils {
 			* )</tt> is used as the predicate instead, as this doesn't trigger autoload.
 			*/
 			if( class_exists( $className ) ) {
-				$fileName	= ( file_exists( $cacheDir . $fileName ) ? $cacheDir : $incDir ) . $fileName;
+
+				array_unshift( $incDirs, $cacheDir );
+				foreach( $incDirs as $path ) {
+					if( file_exists( $path . $fileName ) ) {
+						$inFile	= $path . $fileName;
+						break;
+					}
+				}
+				if( !isset( $inFile) ) {
+					throw new Exception( "APP: class {$className} not found on include path." );
+				}
+
 				// strip the leading <?php tag.  The trailing close tag is already omitted by convention.
-				$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', file_get_contents( $fileName ), 1 );
+				$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', file_get_contents( $inFile ), 1 );
 #error_log ( "Build $className = ". strlen($incSource). ' bytes' );
 
 				return "if( !in_array( '$className', get_declared_classes() ) ) { \n$incSource }";
@@ -131,19 +142,28 @@ class AppSourceUtils {
 		} else {
 
 			// This is a "##requires <filename> <funcName>" include			
-			$fileName		= $incDir . preg_replace( '/[^a-z]/', '.', 
-			                                                   strtolower( $match[1] ) ). '.php';
+			$fileName		= preg_replace( '/[^a-z]/', '.',  strtolower( $match[1] ) ). '.php';
 			$functionName	= $match[2];
+			foreach( $incDirs as $path ) {
+				if( file_exists( $path . $fileName ) ) {
+					$inFile	= $path . $fileName;
+					break;
+				}
+			}
+			if( !isset( $inFile) ) {
+				throw new Exception( "APP: Functions file {$fileName} not found on include path" );
+			}
 
 		   /**
 			* In the case of a function module, this won't be handled by the PHP autoload and it must
 			* therefore be explicitly required as well as being returned to the \b preg_replace_callback().
 			*/
 			if( !function_exists( $functionName ) ) {
-				require( $fileName );
+				require( $inFile );
 			}
+
 			// strip the leading <?php tag.  The trailing close tag is already omitted by convention.
-			$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', file_get_contents( $fileName ), 1 );
+			$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', file_get_contents( $inFile ), 1 );
 			return "if( !function_exists( '$functionName' ) ) { $incSource }";
 		}
 	}

@@ -26,7 +26,6 @@ class AdminPage extends Page {
 'getUserDetails'	=> "Row=SELECT id, flag, name FROM :members WHERE email = '#1' AND password='#2' AND flag='2'",
 'insertNewArticle'	=> "INSERT INTO :articles (flag, author, date, date_edited, title, details, trim_length) " .
 					   "VALUES (0,'#1', #2, #3, '#4',' ',0)",
-'getArticleId'		=> "Val=SELECT id FROM :articles WHERE date = #1",
 'getComment'		=> "Row=SELECT * FROM :comments WHERE id=#1 LIMIT 1",
 'getUserName'		=> "Val=SELECT name FROM :members WHERE MD5(CONCAT('#1',name,':','#2'))='#3' LIMIT 1",
 'getArticle'		=> "Row=SELECT * FROM :articles WHERE id = #1",
@@ -39,6 +38,13 @@ class AdminPage extends Page {
 						WHERE LEFT(config_name,1)!='_'",
 'updateConfigValue' => "UPDATE :config SET config_value='#2' WHERE config_name='#1'", 
 		) );
+/*
+$api = new TextMagicAPI(array(
+    "username"		   => "yourTextMeUsername",
+    "password"		   => "yourTextMePassword",
+	'sending_method'   => 'curl',
+));
+*/
 
 		// Process a returned login form if any (triggered by the existance of the login post variable).
 		if( $cxt->login && $cxt->loginemail && $cxt->password ) {
@@ -72,8 +78,7 @@ class AdminPage extends Page {
 			$title = htmlentities( $cxt->newtitle , ENT_NOQUOTES, 'UTF-8' );
 			$date = time();
 			$db->insertNewArticle( $cxt->user, $date, $date, $title );
-
-			$check_id = $db->getArticleId( $date );
+			$check_id = $db->insert_id;
 			#
 			# If the article is successfully created, a redirect to the new article is issued
 			#
