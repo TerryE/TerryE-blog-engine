@@ -110,6 +110,8 @@ class Page {
 	public function output( $template, $returnOP = FALSE, $nested = FALSE ) {
 
 		$cxt = $this->cxt;
+		// Clear down any cid that exists
+		$cxt->clear('cid');
 
 		$templateClass = "Template{$cxt->languageCode}_" . preg_replace( '/\W/', '_', $template  );
 
@@ -287,9 +289,17 @@ class Page {
 	 * Issue Location header to force refresh on (new) page.  
 	 * @param $newLocation    Relative location to go to.
 	 */
-	public function setLocation( $newLocation ) {
- 		header( "Location: http://{$this->cxt->server}/$newLocation" );
+	public function setLocation( $newLocation, $anchor='' ) {
+		/**
+		 * Note that if the \a cid exists and cookies are not being used, then the cid 
+		 * is appended to the URI.
+		 */
+		$cxt = $this->cxt;
+		
+		$cid = $cxt->cid && count($_COOKIE) == 0 ? 
+					(strpos( $newLocation, "?" ) === FALSE ? '?' : '&') . "cid=" . $cxt->cid :
+					'';
+ 		header( "Location: http://{$cxt->server}/{$newLocation}{$cid}{$anchor}" );
 		header( 'Status: 302' );
 	}
-
 }

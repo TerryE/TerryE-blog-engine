@@ -24,6 +24,14 @@
  * a predicate <tt><b>isset()</b></tt> function call, the application logic can simply refer to 
  * <tt>$cxt->email</tt> or whatever. This will always default to a value ( <tt>=== FALSE</tt> if unset ). 
  *
+ * Another issue which the context now addresses is support for output messaging when implementing a
+ * <a href="http://en.wikipedia.org/wiki/Post/Redirect/Get" >Post/Redirect/Get</a> template.  All 
+ * non-idempotent POSTs must issue a 302 response to a display URI to avoid issues around double 
+ * posting.  However, if the POST detects an error or needs to output other content, then this 
+ * requires some form of session context to be passed to the GET request.  However, I want to avoid
+ * introducing the general overhead of PHP session management for this occasional use, so a message
+ * table is used and the context identity ("\b cid") is used.  If the post has cookies set then this
+ * is passed by cookie, and if not by a request parameter.  See setMessage() for further details.
  */
 
 class AppContext {
@@ -60,6 +68,9 @@ class AppContext {
 		$db->declareFunction( array(
 'getConfig'		=> "Set=SELECT * FROM :config",
 'checkPassword'	=> "Row=SELECT MD5(CONCAT('#1',password)) AS token, flag, email FROM :members WHERE name = '#2'",
+'insertMessage'	=> "INSERT INTO :messages (message, time) VALUES ('#1', UNIX_TIMESTAMP(NOW()))", 
+'getMessage' 	=> "Val=SELECT message FROM :messages WHERE id='#1'",
+'pruneMessages' => "DELETE FROM :messages WHERE time<(UNIX_TIMESTAMP(NOW())-#1)",
 		) );
 
 		// Fetch the config table from the database and add to context
@@ -111,12 +122,15 @@ class AppContext {
 		}
 
 		// The user is an admin if a user record exists and it is flagged (=2) as as admin
-		$a->isAdmin 	= $a->user && $check['flag'] == 2;
+		$a->isAdmin 	= isset( $a->user ) && $a->user && $check['flag'] == 2;
 
 		// Set the request variable count, and set the cacheable flag if the user is a guest, there
         // are no request parameters other than the page parameter and HTML caching is enabled.
 		$a->requestCount  = count( $_GET ) + count( $_POST );
 		$a->HMTLcacheable = $a->enableHTMLcache && $a->requestCount == 1 && !($a->isAdmin);
+
+		// If the query has a "cid" get parameter, then use this to retrieve the associated message
+		$a->message     = $this->getMessage();
 
 		// Decode the requested page. Note that hyphenation is embed arguments.  
 		// So the URI for Article 1 is "article-1" etc.
@@ -139,10 +153,10 @@ class AppContext {
 	 * The variable list is a string which is a repeat of \<type designator\>\<var name\>.
 	 *  -  The type designator is a mandatory sygil character denoting request type followed by an
 	 *     optional type:
-	 *     -  \b # (alias \b G) This is a get variable
-     *     -  \b : (alias \b P) This is a post variable
-     *     -  \b * (alias \b C) This is a cookie variable
-     *     -  \b ! (alias \b F) This is a file parameter
+	 *     -  \b G (alias \b #) This is a get variable
+     *     -  \b P (alias \b :) This is a post variable
+     *     -  \b C (alias \b *) This is a cookie variable
+     *     -  \b F (alias \b !) This is a file parameter
 	 *     -  \b I The type is integer   
 	 *     -  \b H The type is Hex string   
 	 *     -  \b A The type is an Array (used in tabular forms)   
@@ -257,14 +271,63 @@ class AppContext {
 
     public function clear( $name ) {
 
-		if ( isset( $this->attribType[$name] ) && 
-		    $this->attribType[$name] == 'C' ) {
+		if( isset( $_COOKIE["blog_$name"] ) ) {
 			setcookie( 'blog_' . $name,  '', 0, '/', $_SERVER['HTTP_HOST'] );
-		} else {
-			error_log( "APP: Invalid unset of HTTP variable $name.  Not a cookie." );
 		}
-
-		$this->attrib->$name = FALSE;
+		unset( $this->attrib->$name );
 	}
 
+	/**
+	 * Set message/output to be passed to following get as a msg paramerter.  This function 
+     * inserts the message in the message table and sets the \b cid based on the auto-increment
+	 * id for the message with a 3 digit check prefix to prevent silly abuses.  Note that
+	 * unlike most context variables the cid is only published as a public context variable
+	 * as part of a setMessage() invocation.
+	 *
+	 * @param  $msg   string variable or array to be passed.
+	 */
+
+    public function setMessage( $msg ) {
+		/**
+		 * This \b cid is forced to a cookie type if cookies already exist, otherwise it is 
+  		 * be passed as a parameter to the subsequent URI for automatic retrieval.
+		 */
+		if( count( $_COOKIE ) > 0 ) {
+			$this->attribType['cid'] = 'C';
+		}
+		$msg = json_encode( is_array( $msg ) ? $msg : array( $msg ) );
+		$this->db->insertMessage( $msg );
+		$id  = (string) $this->db->insert_id;
+		$this->set( 'cid', substr( md5( $id . 'cid salt' ), 0, 3 ) . $id ); 
+	}
+
+	/**
+	 * Retrieve message/output previously passed to get as a msg paramerter.  This function 
+     * uses the \b cid to retrieve the message from the message table.  The cid can be loaded
+     * from either a cookie or get parameter.  The message table is also occasionally pruned 
+	 * to remove stale messages.
+	 *
+	 * @param  $msg   string variable or array to be passed.
+	 */
+
+    private function getMessage() {
+
+		$msg = '';
+		if( isset( $_GET['cid'] ) || isset( $_COOKIE['blog_cid'] ) ) {
+
+			$cid = isset( $_GET['cid'] ) ? $_GET['cid'] : $_COOKIE['blog_cid'];
+			$chk = substr( $cid, 0, 3 );
+			$id  = substr( $cid, 3 );
+
+			if( $chk == substr( md5( $id . 'cid salt' ), 0, 3 ) ) {
+				$msg = json_decode( $this->db->getMessage( $id ), true );
+			}
+
+			// Prune messages older than 1 day on 10% of URIs with cid set. 
+			if( rand( 0,9 ) == 0 ) {
+				$this->db->pruneMessages( 24*3600 );
+			}
+		}
+		return $msg;
+	}
 }

@@ -7,7 +7,7 @@
 		{COMMENT[comments]}
 {ELSEIF:LOGGED_ON_ADMIN}
 		<p>{TR:You are logged on to your administrative account\:} <b>{LOGGED_ON_USER}&nbsp; <small>(<a href="admin-pwdchange">{TR:change password}</a>)</small></b></p>
-		<form id="postform" method="post" action="admin">
+		<form id="postform" method="post" action="admin-form">
 		<table>
 			<tr> <th><label for="newtitle">{TR:New Article Title\:}</label></th>
 				 <td><input type="text" id="newtitle" name="newtitle" size="80" /></td> </tr>
@@ -52,7 +52,7 @@
 		</form>
 {ELSE}
 		<p>{TR:<b>Log in</b> to your administrative account\:}</p>
-		<form id="postform" method="post" action="admin">
+		<form id="postform" method="post" action="admin-login">
 			<table>
 				<tr><th><label for="loginemail">{TR:Email}</label></th>
 					<td><input type="text" id="loginemail" name="loginemail" /></td>
@@ -61,6 +61,11 @@
 					<td><input type="submit" name="login" class="submit" value="{TR:Log in}" /></td></tr>
 			</table>
 		</form>
+  {IF:ERROR}
+		<hr />
+		<pre>{ERROR}</pre>
+		<hr />
+  {ENDIF}
 {ENDIF}
 	</div>
 {INCLUDE: trailer}

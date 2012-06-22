@@ -2,7 +2,10 @@ Changes at 3.1.2
 ================
 
 AppContext
-	includeDir is now a search list
+	includeDir is now a search list.
+	I am moving to a strict Post/Redirect/Get model and this means that we need some form of 
+	lightweight session context to pass messaging info from the POST to the following GET. This
+    is implemented through the new getMessage() and setMessage() functions.
 
 DefaultBuilder and AppSourceUtils
 	Now use includeDir search list to scan for autoload files allowing a directory hierachy to be 
@@ -14,6 +17,14 @@ TextlocalSMS added
 Page
 	Page::invalidPage() now issues a 404 instead of an extended error in the case of an invalid 
 	request if $cxt->remoteServer is blank (i.e. this is a production instance).
+
+AdminPage
+	Implement Post/Redirect/Get model for all POSTs and add get/setMessage() support for error 
+	handling and notification.
+
+ArticlePage and AuthorArticle
+	Implement Post/Redirect/Get model for all POSTs and add get/setMessage() support for error 
+	handling and notification.
 
 Changes at 3.1.0 + 3.1.1
 ========================

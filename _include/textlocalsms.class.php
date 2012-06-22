@@ -21,8 +21,8 @@ class TextlocalSMS {
 	 * Constructor.
      * This establishes the SMS object and binds authorisation and session parameters.
 	 * 
-	 * @param $uname Your Messenger account's username.
-	`* @param $pwd   Your Messenger accounts password hash.  Note that this isn't a 
+	 * @param $user  Your Messenger account's username.
+	 * @param $pwd   Your Messenger accounts password hash.  Note that this isn't a 
      *               simple MD5 (it embeds a salt) so you need to get this from the 
      *               Text Local interactive code generator.
      * @param $json  Use JSON encoding for return info

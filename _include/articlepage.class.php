@@ -27,7 +27,8 @@
  */ 
 class ArticlePage extends Page {
 
-    public $article;          /**< Copy of article, accessed by invoked AuthorArticle.*/
+    public $article;        //< Copy of article, accessed by invoked AuthorArticle.
+	private $admin;			//< AuthorArticle object if the user is an article admin
 
 	/** 
 	  * Constructor
@@ -51,26 +52,104 @@ class ArticlePage extends Page {
 				$id  = is_numeric( $subPage ) ? $subPage : 0;
 		}
 
-
 		// Get the article 
 		$this->article = $this->db->getArticleById( $id );
-
-		// If the user is an Admin then load the author utilities
-		$admin   = $cxt->isAdmin ? AuthorArticle::get( $this ) : NULL;
-
-		// Raise an error if the request is for an invalid or hidden article
-		if( sizeof($this->article) == 0 || ( !$admin && $this->article['flag'] == 0 ) ) {
-			$this->assign( 'error', getTranslation( 'The requested article cannot be found.' ) ); 
-			$this->output( 'article' );
-			return;
-		}
 		$this->article['datetime'] = date( 'D jS F Y, g:i a', $this->article['date'] );
 
-		#
-		# Get any existing comments for the article
-		#
+		// If the user is an Admin then load the author utilities
+		$this->admin   = $cxt->isAdmin ? AuthorArticle::get( $this ) : NULL;
+
+		// Flag an error if the request is for an invalid or hidden article
+		if( sizeof($this->article) == 0 || ( !$this->admin && $this->article['flag'] == 0 ) ) {
+			$cxt->set( 'subOpt', 'error' );
+		}
+
+		// Acquire any inherited context
+		if( is_array( $cxt->message ) ) {
+			$this->assign( $cxt->message );
+		}
+
+		switch ( $cxt->subOpt) {
+
+			// Get requests are all processed by the article display function
+			case '':		$this->processArticle();			break; 
+
+			// Post requests. These issue redirect headers so no content is required
+
+			case 'comment':	$this->processSubmittedComment();	return; 
+			case 'edit':	$this->processSubmittedEdit();		return; 
+
+			default:	 
+				$this->assign( 'error', getTranslation( 'The requested article cannot be found.' ) ); 
+		}
+
+		// Finally drop through to display the admin page
+		$this->assign( array (
+			'title'           => $this->article['title'],
+			'article'         => $this->article,
+			'enable_comments' => ( $this->article['comments'] == 1 ),
+	 		) );
+		$this->output( 'article' );
+	}
+
+	/**
+     * Process the Submit Comment on the Post Comment window.   A comments form is displayed if
+     * the GET parameter "comments=enabled".  Submission results in a post to /article-N-comment. 
+     * This is processed by AuthorArticle::processComment() and redirected to the article
+     * indicating successful submission or on error back to the comment form.  
+     */
+	private function processSubmittedComment() {
+
+		// Process a returned login form if any (triggered by the existance of the login post variable).
+		$cxt = $this->cxt;
+		$id  = $this->article['id'];
+		if( $cxt->commentpost ) {
+
+			// AuthorArticle::processComment returns a properly formatted message return 
+			$commentStatus = AuthorArticle::get($this)->processComment();
+			$cxt->setMessage( $commentStatus );
+
+			// If there is an error in the comment return, then reenable comment on refresh
+			$cmt = ( $commentStatus['status'] == 'ERROR' ) ? "?comments=enabled" : "";
+#			$cmt = ( $commentStatus['status'] == 'ERROR' ) ? "?comments=enabled&qqdebug=1" : "";
+			$this->setLocation( "article-{$id}{$cmt}", '#postcomment' );
+
+		} else {
+			// In the case of a malformed post simple redisplay the article.
+			$this->setLocation( "article-{$id}" );
+		}
+	}
+
+	/**
+     * Process the Save Buttom on the Edit Article window.  If an admin has requested an 
+	 * inline edit then issued a save, the article content returned by the tiny MCE editor is
+	 * post processed before updating.
+	 * 
+	 * The browser is then redirected back to the article.  This redirection is to prevent a
+	 * repeated save request.
+     */
+
+	private function processSubmittedEdit() {
+
+		// Process a returned login form if any (triggered by the existance of the login post variable).
+		$cxt = $this->cxt;
+		$cxt->allow( ':article_content' );
+		if( $this->admin && $cxt->save ) {
+			$this->admin->submittedArticle();
+		}
+		$this->setLocation( "article-{$this->article['id']}" );
+	}
+ 
+	/**
+     * Process article for display.  
+     */
+	private function processArticle() {
+
+		$cxt = $this->cxt;
+
+		// Get any existing comments for the article
 		if( $this->article['comment_count'] > 0 ) { 
-			$comments = $this->db->getCommentsById( $id );
+			$comments = $this->db->getCommentsById( $this->article['id'] );
 			$ndx = 1;
 			foreach( $comments as &$cmt ) {
 				$cmt['datetime'] = date('D jS F Y, g:i a',$cmt['date']);
@@ -84,40 +163,29 @@ class ArticlePage extends Page {
 		/** 
 		 * Article processing can take place in one of a number of modes:
 		 */
-		if( $admin && $cxt->edit == 'enabled' ) {
+		if( $this->admin && $cxt->edit == 'enabled' ) {
 			/**
 			 *  - If an admin has requested an inline edit of an article then normal 
 			 *    processing path is bypassed and the article content is processed 
 			 * 	  using the tiny MCE editor. 
 			 **/
-			$admin->editArticle();
-
-		} elseif( $admin && $cxt->save ) {
-			/**
-			 *  - If an admin who has requested an inline edit then issued a save, the 
-			 *    article content returned by the tiny MCE editor is post processed
-			 * 	  before updating.  An admin function is executed in this case before 
-			 *	  redirecting back to the article.  This redirection is to prevent a
-			 *    repeated save request.
-			 **/
-			$admin->submittedArticle();
-			$this->setLocation( "article-$id" );
-			return;
+			$this->admin->editArticle();
 
 		} else {
 			/**
 			 *  - Any other article request by an admin generates a file check. See 
-			 * 	  AuthorArticle::fileCheckArticle for further details. This returns a error
-			 *    status which is blank on success.
+			 * 	  AuthorArticle::fileCheckArticle for further details. This returns
+			 *    an error status which is blank on success.
 			 */
-			if( $admin ) {
-				$adminURI = $admin->fileCheckArticle();
+			if( $this->admin ) {
+				$adminURI = $this->admin->fileCheckArticle();
 				if( substr( $adminURI, 0, 6 ) == 'error:' ) { 
-					// The file parse failed.  The error will set by fileCheckArticle is  
-					// display instead of article details
+					// The file parse failed.  The error will set by fileCheckArticle  
+					// is display instead of article details
 					$this->assign( 'error', substr( $adminURI, 6 ) ); 
-					$this->output( 'article' );
 					return;
+				} else {
+					$this->assign( 'admin_uri', $adminURI );
 				}
 			}
 
@@ -129,14 +197,8 @@ class ArticlePage extends Page {
 				 *    has been submitted then an "accepted" message is displayed which includes a  
 				 *    refresh meta otherwise the comments form is (re)displayed.
 				 */
-				list( $comment, $infoText ) = ( $cxt->commentpost ) ?
-					AuthorArticle::get($this)->processComment() :	
-					array( '', '' );
-				if( $comment === TRUE ) {
-					$this->assign( 'info_text', $infoText );
-				} else {
-					AuthorArticle::get($this)->generateCommentForm( $infoText, $comment );
-				}
+				$cxt->allow( ':author:code:comment:cookie:mailaddr*user*email' );
+				AuthorArticle::get($this)->generateCommentForm();
 			}
 		}
 
@@ -146,18 +208,7 @@ class ArticlePage extends Page {
 			 * So in the case where the article is being viewed (rather than edited), the ??? need 
 			 * to be replaced by the appropriate article titles if not in an admin edit mode.
 			 */
-#debugVar( 'content before', $this->article['details'] );
 			$this->article['details'] = $this->replaceArticleNames( $this->article['details'] );
-#debugVar( 'content after', $this->article['details'] );
 		}
-
-		$this->assign( array (
-			'title'           => $this->article['title'],
-			'article'         => $this->article,
-			'admin_uri'       => isset( $adminURI ) ? $adminURI : '',
-			'enable_comments' => ( $this->article['comments'] == 1 ),
-	 		) );
-
-		$this->output( 'article' );
 	}
 }

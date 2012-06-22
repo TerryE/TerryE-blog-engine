@@ -50,7 +50,7 @@ class AuthorArticle {
 'updateCommentCnt'	=> "UPDATE :articles a 
 					    SET    comment_count=(SELECT count(*) FROM :comments c WHERE c.article_id=a.id AND c.flag = 1) 
 					    WHERE  a.id=#1",
-		) );
+			) );
 
 		// set up property synonyms for the article fields
 		foreach( array_keys( $page->article ) as $field ) $this->$field =& $page->article[$field]; 	
@@ -91,7 +91,6 @@ class AuthorArticle {
 
 			// If the file copy is later than the D/B copy then the copy has been edited so update the D/B one
 			$status = $this->updateArticleFromFile( $fileName,  $fileTime );
-#debugVar( 'HTML from file', $this->detail );
 
 		} else {
 
@@ -298,8 +297,6 @@ class AuthorArticle {
 
 		if( !$this->isAdmin ) return FALSE;
 
-		$this->cxt->allow( ':article_content' );
-
 		if( $this->cxt->article_content ){
 			$oldKeywords = $this->keywords;
 
@@ -339,13 +336,10 @@ class AuthorArticle {
 
 	/**
 	 * Creates the article comment form, if the user has requested to create a comment.
-	 * @param $errorText Optional error message to displayed on form
-	 * @param $comment   Optional text to prepopulate the comment field (after error)
 	 */
-	public function generateCommentForm( $errorText = '', $comment = '') {
+	public function generateCommentForm() {
 
 		$cxt     = $this->cxt;
-        $r       = $cxt->allow( ':author:code:comment:cookie:mailaddr*user*email' );
 		$timeNow = time();
 
 		if( $this->isAdmin ) {
@@ -354,15 +348,15 @@ class AuthorArticle {
 			* not required, and no pending post limits apply
 			*/ 
 			$form = array(
-				'comment'  => $comment,
-				'error'    => $errorText,
+				'comment'  => '',
+				'error'    => '',
 				'time'     => $timeNow,
 				);
 		} else { 
 		   /**
 			* As an anti-spam measure any non-logged on IP can only queue up to 2 pending comments.
 			*/
-			if( $this->db->getCommentCount( $_SERVER['REMOTE_ADDR'] ) ) {
+			if( $this->db->getCommentCount( $_SERVER['REMOTE_ADDR'] ) > 1 ) {
 				$this->page->assign( array (
 					'comment_limit' => true,
 					'remote_ip' => $_SERVER['REMOTE_ADDR'],
@@ -384,16 +378,25 @@ class AuthorArticle {
 
 				$check = array( 'd1' => $d1, 'd2' => $d2, 'd3' => $d3, 'token' => $token );
 
-				$form = array (
-					'author'   => $cxt->author   == '' ? $cxt->user  : $cxt->author,
-					'mailaddr' => $cxt->mailaddr == '' ? $cxt->email : $cxt->mailaddr,
+				if( is_array( $cxt->message ) && 
+				    isset( $cxt->message['form']) &&
+					is_array( $cxt->message['form']) ) {	
+					// Initialise error, author, mailaddr, comment fields
+					$form = $cxt->message['form'];
+
+				} else {
+					$form = array (	
+						'error'    => '',
+						'author'   => $cxt->user,
+						'mailaddr' => $cxt->email,
+						'comment'  => '',
+						);
+				}
+				$form = array_merge( $form, array(
 					'check'    => $check,
 					'time'     => $timeNow,
-					'error'    => $errorText,
-#						'comment'  => htmlspecialchars( $cxt->comment ),
-					'comment'  => $comment, 
 					'cookie'   => $cxt->cookie ? 'checked' : '',
-					);
+					) );
 			}
 		}
 	   /**
@@ -421,10 +424,10 @@ class AuthorArticle {
 	/**
 	 * This function processes the article comment form after the user has submitted a comment. 
 	 * If successful and the user is a logged on author then the comment is inserted into the database 
-	 * uncondirionally.  If successful and the user is a normal user then it is inserted as an 
-	 * unconfirmed comment.  If unsuccessful, any error text and sanitized commment.  Note that the 
-	 * comment itself will only be displayed after the user has activated the URI in the confirmation 
-	 * email, or an admin activates it.
+	 * unconditionally.  If successful and the user is a normal user then it is inserted as an 
+	 * unconfirmed comment.  If unsuccessful, any error text and sanitized commment is returned.  Note 
+	 * that the comment itself will only be displayed after the user has activated the URI in the 
+	 * confirmation email, or an admin activates it.
 	 *
      * @returns array( $comment, $errorText ) $comment is set to TRUE if the process is sucessful and 
      *          the sanitized comment text otherwise.
@@ -432,22 +435,25 @@ class AuthorArticle {
 	public function processComment() {
 
 		$cxt = $this->cxt;
-		$r = $cxt->allow( ':author:code:cookie:mailaddr:comment:token:time:article_id:article_content' );
+		$cxt->allow( ':author:code:cookie:mailaddr:comment:token:time:article_id:article_content' );
 
 		// Prevent a refresh of the form submitting a duplicate comment	
 		if ( $this->db->getSameCount( $cxt->time, $this->id ) > 0 ) { 
 			$this->page->setLocation( "article-{$this->id}" );
-			exit();
+			exit;
 		}
 
-		$infoText = '';
+		$info = array();
 
 		if( $this->isAdmin ) {
 
+			// skip validation and set author / mailaddr defaults in the case of an Article admin
 			$author		= $cxt->user;
 			$mailaddr	= $cxt->email;  
 
 		} else {
+
+			// The comment is from a guest.  Carry out full validation
 
 			$correct_token = md5( sprintf( 'CHECK: %d %d %s %s %s', 
 			                               $cxt->code, $cxt->time, __FILE__, 
@@ -459,19 +465,19 @@ class AuthorArticle {
 			// included on the form to avoid needing to use sessions (and a salt so I can open-source the code).
 
 			if( $this->id != $cxt->article_id ) {
-				$infoText .= getTranslation( 'Corrupt article ID. Please reenter comment.' ) .  '<br/>';
+				$info[] = getTranslation( 'Corrupt article ID. Please reenter comment.' );
 			}
 			if( $cxt->time < time() - 1800 ) {
-				$infoText .= getTranslation( 'State session. Please reenter comment.' ) .  '<br/>';
+				$info[] = getTranslation( 'Session expired. Please reenter comment.' );
 			}
 			if( $cxt->author == '' ) {
-				$infoText .= getTranslation( 'You must enter a name.' ) .  '<br/>';
+				$info[] = getTranslation( 'You must enter a name.' );
 			}
 			if( $mailaddr === FALSE ) {
-				$infoText .= getTranslation( 'You must specify a valid confirmation_email' ) .  '<br/>';
+				$info[] = getTranslation( 'You must specify a valid confirmation_email' );
 			}
 			if( $cxt->token != $correct_token ) {
-				$infoText .= getTranslation( 'Wrong answer.  Try again.' ) .  '<br/>';
+				$info[] = getTranslation( 'Wrong answer.  Try again.' );
 			}
 			if( $cxt->cookie == 1 ) {
 				$cxt->set( 'user', $author );
@@ -488,41 +494,48 @@ class AuthorArticle {
 		$comment = HtmlUtils::cleanupHTML( html_entity_decode($cxt->comment), HtmlUtils::COMMENT );
 
 		if( substr( $comment, 0, 7 ) == '<error>') {
-			$infoText .= substr( $comment, 7 );
-			$comment   = FALSE; 
+			$info[] = substr( $comment, 7 );
+			$comment = '';
 		}
 
-		if( $infoText == '' ) {
+		if( count( $info ) > 0 ) {
+			// In the case of an error, return the error info and the attempted comment
+			$resp = array( 
+				'status' => 'ERROR', 
+				'form'   => array(
+					'error'    => implode( "<br />\n", $info ),
+					'author'   => $cxt->author, 
+					'mailaddr' => $cxt->mailaddr, 
+					'comment'  => $comment ),
+				);
 
-			// In the case of no error, insert the comment into the comments table and clear down  
-			// the parameters, then reread to get id. Note if made by an author then flag = 1 and 
+		} else {
+			// In the case of no error, insert the comment into the comments table and use the last id
+			// return to set the comment ID. Note if made by an author then flag = 1 and 
 			// no email confirmation is required.
 			$this->db->insertComment( 
 				( $this->isAdmin ? 1 : 0 ) , $cxt->time, $this->id, $author, 
 				$_SERVER['REMOTE_ADDR'], $mailaddr, $comment
 				);
-			$commentID = $this->db->insert-id;
+			$commentID = $this->db->insert_id;
 
 			if( $this->isAdmin ) {
-
 				// in the case of an admin / author the comment is immediately published 
 				// so update the article comment count and refresh to the comments anchor  
 				$this->db->updateCommentCnt( $this->id );
-				$this->page->assign( 'refresh_meta',"article-{$this->id}#commentstrailer" );
 				$this->page->purgeHTMLcache();
-				$infoText =	getTranslation( 'Comment registered.  It will be displayed on refresh' );
+				$info[] = getTranslation( 'Comment registered.' );
+
 			} else {
 
-				// Prepare and send the email confirmation request
+				// Prepare and send the email confirmation request to the user
 				$this->page->assign( array (
 					'title' => $this->title,
 					'sitename' => $_SERVER['HTTP_HOST'],
 					'comment_id'=> $commentID,
 					'comment_uid'=> md5( "{$this->cxt->salt}$mailaddr:$commentID" ),
 					 ) );
-
 				$mailMsg = $this->page->output( 'confirm_email', TRUE );
-
 				$mailSubject = sprintf( getTranslation( 'Confirmation of comment on post %s' ),  $this->title );
 				$mailHeaders = implode ("\r\n", array( 
 					"From: do_not_reply@ellisons.org.uk",
@@ -533,15 +546,17 @@ class AuthorArticle {
 					"Date: " . date( 'r' ),
 					"Subject: $mailSubject",
 					) );
-debugVar( 'mailHeaders', $mailHeaders );
-debugVar( 'mailMsg', $mailMsg );
 
-#######TESTING######				mail( $mailaddr, $mailSubject, $mailMsg, $mailHeaders );
-				$comment = TRUE;
-				$infoText =	getTranslation( 'Comment registered.  It will be displayed after email confirmation' );
-				$this->page->assign( 'refresh_meta',"article-{$this->id}&commentaccepted=y#commentstrailer" );
+/*TESTING*/debugVar( 'mailHeaders', $mailHeaders );
+/*TESTING*/debugVar( 'mailMsg', $mailMsg );
+/*TESTING*/#	mail( $mailaddr, $mailSubject, $mailMsg, $mailHeaders );
+				$info[] =	getTranslation( 'Comment registered.  It will be displayed after email confirmation' );
 			}
+			$resp = array(
+				'status' => 'OK', 
+				'info_text' => $info[0],
+				);
 		}
-		return array ( $comment, $infoText );
+		return $resp;
 	}
 }

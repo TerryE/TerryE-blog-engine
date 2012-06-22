@@ -4,11 +4,11 @@
 		<p><b>{TR:The requested article cannot be found.}</b></p>
 		<p>{TR:Please <a href="javascript\:history.go(-1)">go back</a> and select another.}</p>
 {ELSEIF:EDIT_ARTICLE}
-{SCRIPT_TAG}
+ {SCRIPT_TAG}
 	  <div id="adminform">
-		<form method="post" action="article-{ARTICLE[id]}">
+		<form method="post" action="article-{ARTICLE[id]}-edit">
 			<textarea class="mceArticleSource" name="article_content">
-{ESCAPED_DETAILS}
+ {ESCAPED_DETAILS}
 			</textarea><br />
 			<input type="hidden" name="save" value="submit"/>
 		</form>
@@ -32,11 +32,8 @@
 			<li><span class="comments">{TR:Comments} ({ARTICLE[comment_count]})</span></li>
 			{IF:ENABLE_COMMENTS}<li><span class="comments"><a href="article-{ARTICLE[id]}?comments=enabled#postcomment">{TR:Post a comment}</a></span></li>{ENDIF}
 		</ul>
-
 		<a id="commentsanchor"></a>
-
 {// Now add the comments for the article is any exist}
-
   {IF:ARTICLE[comment_count]>0}
 		<h3>{TR:Comments}</h3>
     {FOREACH: COMMENTS:COMMENT}
@@ -54,17 +51,15 @@
   {ENDIF}
 <br style="clear:left;" />
 {// If the user has requested to add a comment then display the comments form}
-
   {IF:COMMENT_LIMIT}
 		<h3>{TR:Comments not currently permitted}</h3>
-		<p>{TR:Please note that as an anti-spam measure, Each poster must confirm any comments posted, by responding to an email confirmation request.&nbsp; There is a limit on the number of unconfirmed comments from any client.&nbsp; Your client has reached this limit and further comments are disabled until your previous comments have been authorised.}</p>
-  {ELSEIF:INFO_TEXT} <a id="postcomment"></a><h4><font style="color: #FF0000; font-weight: bold;">{INFO_TEXT} </font></h4>
+		<p>{TR:Please note that as an anti-spam measure, each poster must confirm any comments posted by responding to an email confirmation request.&nbsp; There is a limit on the number of unconfirmed comments from any client.&nbsp; Your client has reached this limit and further comments are disabled until your previous comments have been authorised.}</p>
+  {ELSEIF:INFO_TEXT}<a id="postcomment"></a><h4><font style="color: #FF0000; font-weight: bold;">{INFO_TEXT}</font></h4>
   {ELSEIF:COMMENT_FORM_ENABLED}
-		<script type="text/javascript" src="includes/tinymce/tiny_mce.js"></script> 
-		<script type="text/javascript" src="includes/tinymce/tiny_mce_comment_bootstrap.js"></script> 
+   {SCRIPT_TAG}
 		<div id="postform">
 			<a id="postcomment"></a>
-			<form method="post" action="article-{ARTICLE[id]}?comments=enabled#commentsanchor">
+			<form method="post" action="article-{ARTICLE[id]}-comment">
 				<input type="hidden" name="article_id" value="{ARTICLE[id]}" />
 				<input type="hidden" name="time" value="{FORM[time]}" />
       {IF:!LOGGED_ON_ADMIN}
@@ -73,7 +68,7 @@
 				<input type="hidden" name="debug" value="false" />
 				<h3>{TR:Post a comment}</h3>
     {IF:FORM[error] != ''} <h4><font style="color: #FF0000; font-weight: bold;">{FORM[error]} </font></h4>{ENDIF}
-				<p>{TR:Please note that your <strong>name</strong> is required and that all posts will not be visible until authorised by an administrator.}</p>
+				<p>{TR:Please note that your <strong>name</strong> is required and that posts will not be visible until authorised.}</p>
 				<table>
 					<tr><th><label for="commentauthor">{TR:Name}</label></th>
 {IF:LOGGED_ON_ADMIN}
@@ -94,7 +89,7 @@
 						<td><input type="submit" name="commentpost" value="{TR:Submit Comment}" class="submit" /></td></tr>
 					<tr><th>&nbsp;</th>
 						<td class="formdisclaimer"><p>{TR:You should be aware that all information on blog site is © Terry Ellison 2010 and made open access under the <a href="http\://creativecommons.org/licenses/by/3.0/">Creative Commons Artistic Licence</a>.}</p>
-						<p><b>{TR:Your comments will only publicly available after you have carried out email confirmation.  Your email address will only used for this purpose and is not made public.}</b></p>
+						<p><b>{TR:Your comments will only publicly available after confirmation.&nbsp; You can choose to use email confirmation.&nbsp; Your email address will only used for this purpose and will not be made public.}</b></p>
 						<p>{TR:Comments that are not confirmed will be automatically deleted after 7 days.}</p>
 						<p>{TR:The blog author reserves the right to delete comments which breach copyright or the rules of site etiquette as he determines (such as unnecessary use of obscenity or spam content).}</p></td></tr>
 				</table>

@@ -41,16 +41,7 @@ GENERATE_XML           = NO
 SHOW_FILES             = YES
 SHOW_NAMESPACES        = NO
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = ../index.php ../_include/dispatcher.class.php ../_include/functions.php \
-		../_include/appcontext.class.php ../_include/appdb.class.php ../_include/appsourceutils.class.php \
-		../_include/abstractbuilder.class.php ../_include/defaultbuilder.class.php ../_include/appbuilder.class.php  \
-		../_include/tinybuilder.class.php ../_include/htmlbuilder.class.php ../_include/templatebuilder.class.php \
-		../_include/page.class.php ../_include/aboutpage.class.php ../_include/adminpage.class.php \
-		../_include/archivepage.class.php ../_include/articlepage.class.php ../_include/indexpage.class.php \
-		../_include/invalidpage.class.php ../_include/photopage.class.php ../_include/rsspage.class.php \
-		../_include/searchpage.class.php ../_include/sitemappage.class.php \
-		../_include/authorarticle.class.php ../_include/sync.class.php \
-		../_misc
+INPUT                  = ../index.php ../_include ../_misc
 FILE_PATTERNS          = *.php *.txt *.sh
 RECURSIVE              = YES
 EXCLUDE                = ../_template ../themes ../html_docs ../.git ../.gitignore
