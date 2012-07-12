@@ -1,6 +1,7 @@
 <?php
 ##requires functions getTranslation 
 ##requires class AppContext
+##requires class AppLogger
 ##requires class AppDB
 ##requires class Page
 ##requires class IndexPage
@@ -12,10 +13,9 @@
  */
 class Dispatcher {
 	/**
-	 * Main entry point to blog application. Establish AppDB, AppParams and (request) AppContext.  Then dispatch
-	 * to the appropriate page class or InvalidPage if page is unknown. A "try" wrapper around this handles
-	 * any exceptions and displays a simple error back to the user.
-	 * \todo  Need to add minimal HTML pages "sorry invalid request"
+	 * Main entry point to blog application. Estabish AppLogger and (request) AppContext.  Then dispatch
+	 * to the appropriate page class or InvalidPage if page is unknown. A "try" wrapper arounds
+	 * this handle any exceptions and displays a simple error back to the user.
 	 */
 	static function dispatch() {
 
@@ -25,6 +25,7 @@ class Dispatcher {
 
 		try{
 			$cxt = AppContext::get();
+			AppLogger::get( defined ( 'START_TIME' ) ? START_TIME : NULL );
 
 			switch ( $cxt->page ) {
 				case 'admin':		new AdminPage;					break; 
@@ -46,6 +47,5 @@ class Dispatcher {
 		} catch (Exception $e) {
 			error_log ( $e->getMessage() );
 		}
-		pageTimer( "Page {$cxt->page} completed" );
 	}
 }

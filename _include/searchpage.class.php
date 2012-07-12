@@ -1,4 +1,5 @@
 <?php
+##requires class TemplateEN_search
 /** 
  *  Process Search page.  The search page has three modes.  If either the sub-page denotes a
  *  keyword or the q parameter is set then the apprppriate query against the articles is done. 

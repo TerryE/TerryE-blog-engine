@@ -36,10 +36,7 @@ class AuthorArticle {
 		$this->isAdmin	= $this->cxt->isAdmin;
 		
 		$this->db->declareFunction( array(
-'updateArticle'		=> "UPDATE :articles 
-					    SET    flag = '#2', date = #3, date_edited = #4, title = '#5', 
-						       details = '#6', keywords = '#7', trim_length = #8 
-						WHERE id=#1", 
+'updateArticle'		=> "UPDATE :articles SET #2 WHERE id=#1", 
 'getAllKeyords' 	=> "Set=SELECT keywords FROM :articles",
 'updateKeywordList' => "UPDATE :config SET config_value='#1' WHERE config_name='_keywords'",
 'updatePurgeDTS'	=> "UPDATE :config SET config_value='#1' WHERE config_name='date_last_admin_purge'",
@@ -200,17 +197,13 @@ class AuthorArticle {
 		}
 
 		// Build update set clause using only changed fields
-		foreach( $new as $key => $value ) {
-			if ( $this->$key == $value ) {
+		foreach( array_keys( $new ) as $key ) {
+			if ( $this->$key == $new[$key] ) {
 				unset( $new[$key] );
-			} else { 
-                $field      = "$key='" . $this->db->escape_string( $value ) . "'";
-				$fields     = isset( $fields ) ? "$fields, $field" : $field;
-				$this->$key = $value;
 			}
 		}
 
-		$this->db->query( "UPDATE {$this->db->tablePrefix}articles SET $fields WHERE id={$this->id}" );
+		$this->db->updateArticle( $this->id, $new );
 
 		// The keyword list is rarely changed, but the sidebar keyword list also needs updating if it is.
 		if( isset( $new['keywords'] ) ){
@@ -326,9 +319,15 @@ class AuthorArticle {
 				$this->trim_length = $m[0][1];     // REG_OFFSET_CAPTURE forces the double index variant
 			}
 
-		 	$this->db->updateArticle( 
-				$this->id, $this->flag, $this->date, $this->edit_time, $this->title, 
-				$this->details, $this->keywords, $this->trim_length );
+		 	$this->db->updateArticle( $this->id, array( 
+				flag		=> $this->flag, 
+				date		=> $this->date, 
+				date_edited	=> $this->edit_time, 
+				title		=> $this->title,
+				details		=> $this->details, 
+				keywords	=> $this->keywords, 
+				trim_length	=> $this->trim_length,
+				) );
 
 			$this->page->purgeHTMLcache();
 		}

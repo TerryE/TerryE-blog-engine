@@ -24,8 +24,8 @@
 function __autoload( $className ) {
 
 	$fileName	= preg_replace( '/[^a-z]/', '.', strtolower( $className ) ) . '.class.php';
-	$incFile	= INC_DIR . $fileName;
-	$cacheFile	= CACHE_DIR . $fileName;
+	$incFile	= INC_DIR   . DIRECTORY_SEPARATOR . $fileName;
+	$cacheFile	= CACHE_DIR . DIRECTORY_SEPARATOR . $fileName;
 
 	if ( strpos( $fileName, 'builder.class.php' ) ) {
 		// include the _include version of the builder class
@@ -98,11 +98,7 @@ function getTranslation( $phrase ) {
  * @param $msg   Message to be output to debug log
  */
 function debugMsg( $msg ) {
-    static $debugFile=NULL;
-    if( !isset( $debugFile ) ) {
-		$debugFile = AppContext::get()->debugFile;
-	}	
-	error_log( $msg . "\n", 3, $debugFile );
+    AppLogger::get()->log( $msg );
 }
 
 /**
@@ -111,23 +107,5 @@ function debugMsg( $msg ) {
  * @param $var     Variable to be dumped to debug log
  */
 function debugVar($title, $var) { 
-	 debugMsg( "$title = " . var_export($var, true) );
-} 
-
-/**
- * Simple debug transaction timer
- * @param $eventName Timer event being displayed 
- */
-function pageTimer( $eventName ) {
-    static $u0, $s0;
-
-	if( is_null( $s0 ) ) {
-		list( $u0, $s0 ) = explode( " ", START_TIME );
-		debugMsg( date( 'Y-m-d H:i:s', $s0 ) .  " - Transaction timer set at 0 mSec" );
-	}
-
-	list( $u1, $s1 ) = explode( " ", microtime() );
-    // Do (s1-s0) ... to avoid loss of precision 
-	$elapsed = ( ( (float)$s1 - (float)$s0 ) + ( (float)$u1 - (float)$u0 ) ) * 1000;
-	debugMsg( sprintf( "\t%s at %u mSec", $eventName, (int) $elapsed ) );
+	 AppLogger::get()->log( "$title = " . var_export($var, true) );
 }

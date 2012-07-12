@@ -17,7 +17,7 @@ class AppDB extends mysqli {
 	private static $_class = __CLASS__;
     private function __clone() {}
 	/**
-	 * Initialise the blog context. This is a static method since only one AppDB instance is allowed. The
+	 * Initialise the DB context. This is a static method since only one AppDB instance is allowed. The
 	 * $connectParams must be provided on first invocation.
 	 */
 	public static function get() {
@@ -45,6 +45,7 @@ class AppDB extends mysqli {
 		$this->query		= array();
 		$this->tables		= array();
 
+		// The property $tables contains a dictionary of valid table names less the prefix.
 		foreach( $this->querySet( "SHOW TABLES LIKE '{$this->tablePrefix}%'" )
 			as $table) {
 			$v = array_values( $table );
@@ -122,8 +123,10 @@ class AppDB extends mysqli {
 	 * The SQL statement is processed and the follwing substitution of argument patterns is carried out:
 	 * - Any :{lower case word} strings are assumed to be table names and the ":" escape character is 
 	 *   replaced by tablePrefix property 
-	 * - Any \#N arguments (where N is an integer) are replaced by the Nth calling parameter.  The
-	 *   argument is passed through mysqli::real_escape_string() if the parameter is not numeric. 
+	 * - Any \#N arguments (where N is an integer) are replaced by the Nth calling parameter.  Any scalar
+	 *   argument is passed through mysqli::real_escape_string() if the parameter is not numeric.  If the
+     *   argument is a keyed array then it is replaced by a comma separated list of key='value' where
+     *   key with the corresponding \b value (again escaped where necessary) is taken from the array.
 	 *
 	 * In this way the application is able to wrap all D/B access in a locally implemented functional
 	 * form.
@@ -133,27 +136,36 @@ class AppDB extends mysqli {
 		if( !isset( $this->query[$name] ) ) {
 			throw new Exception( "APP: Invalid AppDB::{$name} not defined" );
 		}
+		$time = microtime( TRUE );
 
 		$this->arguments = $arguments;
 		$query = preg_replace_callback( '/(?:#\d+|:\w+)/', 
 										array(&$this, 'replaceArguments' ),
 										$this->query[$name] );
 
-		if( preg_match( '/^(Val|Row|Set)=(.*)/s', $query, $m ) ) {
-			switch( $m[1] ) {
-				case 'Val':
-					return $this->queryValue( $m[2] );
-			
-				case 'Row':
-					return $this->queryRow( $m[2] );
-			
-				case 'Set':
-					return $this->querySet( $m[2] );
-			}
+		//Split type and query.  This pattern will always match, so no if req'd
+		preg_match( '/^(Val=|Row=|Set=)?(.*)/s', $query, $m );
+		list( $dummy, $type, $query ) = $m;
 
-		} else {
-			return $this->query( $query );
-		}	
+		switch( $type ) {
+			case 'Val=':
+				$rtn = $this->queryValue( $query ); break;
+		
+			case 'Row=':
+				$rtn = $this->queryRow( $query );   break;
+		
+			case 'Set=':
+				$rtn = $this->querySet( $query );   break;
+
+			case '':
+				$rtn = $this->query( $query );      break;
+		}
+
+		$time = round( ( microtime( TRUE ) - $time ) * 100000 );
+
+		AppLogger::get()->log( "SQL\t$time\t" . preg_replace( '/[ \t\n]+/', ' ', $query ) );
+	
+		return $rtn;
 	}
 
 	private $arguments;
@@ -167,8 +179,21 @@ class AppDB extends mysqli {
 		$arg = substr( $m[0], 1); 
 		if ( $type == '#' && isset( $this->arguments[ $arg - 1 ] ) ) {
 			$arg = $this->arguments[ $arg - 1 ];
-			if( !is_numeric($arg) ) {
+			if( is_array( $arg ) ) {
+				foreach ( $arg as $k -> $v ) {
+					if( !preg_match( '/^[a-z]\w+$/i', $k ) ) {
+						throw new Exception( "Invalid SQL query substitution parameter: $k" );
+					}
+					if( !is_numeric( $v ) ) {
+						$v = $this->real_escape_string( $v );
+					}
+					$argList[] = "$k='$v'";
+				}
+				$arg = implode( ", ", $argList );
+
+ 			} elseif( !is_numeric( $arg ) ) {
 				$arg = $this->real_escape_string( $arg );
+
  			}
 			return $arg;
 

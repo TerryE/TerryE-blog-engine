@@ -1,4 +1,5 @@
 <?php
+##requires class TemplateEN_sitemap
 /**
  *  Process sitemap.xml page.  This class outputs the XML content for a sitemap request as per the 
  *  V0.9 schema.  See <a href="http://en.wikipedia.org/wiki/Sitemap_index">Wikipedia:Sitemap index</a>

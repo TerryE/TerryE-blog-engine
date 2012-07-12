@@ -79,17 +79,25 @@ class AppContext {
 			$a->$param	= $row['config_value'];
 		}
 
-		// For the std dirs, prefix with the rootDir and add trailing /
-		foreach( array( 'HTMLcacheDir', 'adminDir',  'cacheDir', 'templateDir' ) as $d ) {
-			$a->$d = $a->rootDir . DIRECTORY_SEPARATOR . $a->$d . DIRECTORY_SEPARATOR;
+		// For the std dirs, prefix with the rootDir and add trailing /.  Note that in the case of the
+		// includes and cache directories, these entries are option and will default to INC_DIR and CACHE_DIR
+		$a->HTMLcacheDir = $a->rootDir . DIRECTORY_SEPARATOR . $a->HTMLcacheDir . DIRECTORY_SEPARATOR;
+		$a->adminDir	 = $a->rootDir . DIRECTORY_SEPARATOR . $a->adminDir . DIRECTORY_SEPARATOR;
+		$a->templateDir	 = $a->rootDir . DIRECTORY_SEPARATOR . $a->templateDir . DIRECTORY_SEPARATOR;
+		$a->cacheDir	 = isset( $a->cacheDir ) ? 
+							$a->rootDir . DIRECTORY_SEPARATOR . $a->cacheDir . DIRECTORY_SEPARATOR :
+							CACHE_DIR . DIRECTORY_SEPARATOR;
+
+		if( isset( $a->includeDir ) ) {
+			// includeDir is a searchlist so unpack to array, again each with rootDir prefix and trailing / 
+			foreach ( explode( ';', $a->includeDir ) as $d) {
+				$includes[]	= $a->rootDir . DIRECTORY_SEPARATOR . $d . DIRECTORY_SEPARATOR;
+			}
+			$a->includeDir  = $includes; 
+		} else {
+			$a->includeDir  = INC_DIR . DIRECTORY_SEPARATOR; 
 		}
 
-		// includeDir is a searchlist so unpack to array, again each with rootDir prefix and trailing / 
-		$includes 		= array();
-		foreach ( explode( ';', $a->includeDir ) as $d) {
-			$includes[]	= $a->rootDir . DIRECTORY_SEPARATOR . $d . DIRECTORY_SEPARATOR;
-		}
-		$a->includeDir  = $includes;
 		$a->keywordList	= unserialize( $a->_keywords ); 
 		$a->pid			= getmypid();
 
@@ -104,6 +112,10 @@ class AppContext {
 		} else {
 			$this->allow( "Cuser,Ctoken,Cemail,Gpage" );
 			$a->debug = FALSE;
+		}
+
+		if( isset( $a->debugFile ) ) {
+			AppLogger::get()->setLog( $a->debugFile );
 		}
 
 		// Check if the user is logged on.  This is determined from the user and token cookies. So
@@ -176,9 +188,13 @@ class AppContext {
 
 		array_shift( $va );
 		while ( $kind = array_shift ($va) ) {
+			if( $kind[0] == ',' ) {
+				$kind=substr( $kind, 1 );
+			} 
 			$name = array_shift ($va);
 			$result = FALSE;
-			switch ( substr( $kind, 0, 1 ) ) {
+
+			switch ( $kind[0] ) {
 
 				case '#':
 				case 'G':

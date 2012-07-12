@@ -1,4 +1,5 @@
 <?php
+##requires class TemplateEN_photo
 /** 
  *  Process photo page. This has three sub-modes 
  *												Admin Options
@@ -33,7 +34,7 @@ class PhotoPage extends Page {
 							FROM  :photos p INNER JOIN :photo_albums a ON p.album_id = a.id
 							WHERE  p.id=#1 AND p.flag>=#2 AND a.flag>=#2",
 'insertPhoto'		=> "INSERT INTO :photos (title, description, album_id) VALUES ( #1, '#2', '#3' )",
-'deletePhoto'		=> "DELETE FROM :photos WHERE title='#1'",
+'deletePhoto'		=> "DELETE FROM :photos WHERE id='#1'",
 'updatePhotoCnt'	=> "UPDATE :photo_albums SET photo_count = (SELECT COUNT(*) FROM :photos WHERE album_id=#1) WHERE id=#1",
 'updatePhotoDesc'	=> "UPDATE :photos SET description='#2' WHERE id=#1",
 'updatePhoto'		=> "UPDATE :photos SET title='#2', description='#3', flag=#4 WHERE id=#1",
@@ -115,7 +116,7 @@ class PhotoPage extends Page {
 					$photo=$db->getPhoto( $title );
 
 					if( !$this->processImage( $newimage, $photo['album_id'], $photo['id'] ) ) {
-						$db->deletePhoto( $title );
+						$db->deletePhoto( $photo['id'] );
 						$error = "Invalid image format";
 					}
 
@@ -172,7 +173,7 @@ class PhotoPage extends Page {
 
 			if( $cxt->title == $photo['title'] ) {
 				$album = $photo['album_id'];
-				$db->query( "DELETE FROM :photos WHERE id=$id" );
+				$db->deletePhoto( $photo['id'] );
 
 				@unlink( "$rootDir/images/photos/thumbnail/$id.jpg" );
 				@unlink( "$rootDir/images/photos/full/$id.jpg" );

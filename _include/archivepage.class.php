@@ -1,4 +1,5 @@
 <?php
+##requires class TemplateEN_archive
 /**
  * Process archive page.
  * This is a new archive page algorithm which replaces a previous version.  This version moves all 

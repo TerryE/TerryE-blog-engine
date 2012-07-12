@@ -19,7 +19,8 @@ class Sync {
 'getChangedArticles'	=> "Set=SELECT * FROM :articles WHERE date_edited>#1 ORDER BY id",
 'getArticlebyId'		=> "Row=SELECT * FROM :articles WHERE id=#1",
 'createBlankSarticle'	=> "INSERT INTO :articles( id, details ) VALUES ( #1, '&nbsp;' )",
-'updateLastSyncTime'	=> "UPDATE blog_config SET config_value=#1 WHERE config_name='dateLastSynced'",
+'updateLastSyncTime'	=> "UPDATE :config SET config_value=#1 WHERE config_name='dateLastSynced'",
+'updateArticle'			=> "UPDATE :articles SET #2 WHERE id=#1",
 		) );
 
 		$report		= '';
@@ -95,7 +96,7 @@ class Sync {
 		$db->declareFunction( array(
 'getSelectedArticles'	=> "Set=SELECT * FROM :articles WHERE date_edited>#1 OR id in (#2) ORDER BY id",
 'createBlankSarticle'	=> "INSERT INTO :articles( id, details ) VALUES ( #1, '&nbsp;' )",
-'updateLastSyncTime'	=> "UPDATE blog_config SET config_value=#1 WHERE config_name='dateLastSynced'",
+'updateLastSyncTime'	=> "UPDATE :config SET config_value=#1 WHERE config_name='dateLastSynced'",
 		) );
 
 		// Unpack input articles and reindex by article ID 
@@ -164,22 +165,18 @@ class Sync {
 		$id = $newArticle['id'];
 		unset( $newArticle['id'] );		// we don't need to reset the primary key
 
-		$setClause = '';
-		reset( $newArticle );
-		while ( list( $field, $value ) = each( $newArticle ) ) {
-			// Create ",field=<escaped contents>" for each changed field
-			if( $previousArticle[$field] != $value ) {
-				$setClause .= ", $field='{$db->escape_string( $value )}'";
+		foreach( array_keys( $newArticle ) as $field ) {
+			if( $previousArticle[$field] == $newArticle[$field] ) {
+				unset( $newArticle[$field] );
 			}
 		}
-		
-		if( $setClause == '' ) {
-			return 'same';
-		} else {
-			// Update the article if any fields are modified
-			$db = AppDB::get();
-			$db->query( "UPDATE {$db->tablePrefix}articles SET ". substr( $setClause, 1) . " WHERE id='$id'" );
+
+		// $newArticle now contains only modified fields so update D/B if not empty		
+		if( count( $newArticle ) > 0 ) {
+			$db->updateArticle( $id, $newArticle );
 			return "updated";
+		} else {
+			return 'same';
 		}
 	}
 }

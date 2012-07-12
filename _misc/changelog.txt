@@ -1,3 +1,50 @@
+Changes at 3.1.3
+================
+
+<all>Page
+	Add the appropriate "##requires class TemplateEN_<tempatename>" if that page requires it.  This 
+	ensures that the template will be prepended to the cached version, removing one scriptfile load.
+
+AppContext
+	Make the includeDir and cacheDir configuration parameters options and tidy up related code.
+ 	Add support for AppLogger
+
+AppDB
+	Add support for keyed array parameters in the dynamic DB calls.  This extra funtionality 
+    facilitates "UPDATE xxx SET <dynamic list>  WHERE ..." which were previously the only types of 
+    SQL call in the application which couldn't / didn't used this encapsulation
+
+    Add support for loggin of all D/B queries.
+
+AuthorArticle
+	Use new DB dynamic parameter feature to replace query() with new updateArticle() call.
+
+AlbumPage
+	PRG to do
+
+Dispatcher
+	Now initiates the AppLogger
+
+PhotoPage
+    deletePhoto() now by ID
+	PRG to and remain to ImagePage
+
+SearchPage
+	Immutable so PRG optional
+
+Sync
+	Use new DB dynamic parameter feature to replace query() with new updateArticle() call.
+
+functions.php
+	Add support for AppLogger in debugMsg()
+
+index.php
+	Add Doxygen comments
+
+Sort out comment notification
+
+Daily "cron" job
+
 Changes at 3.1.2
 ================
 
@@ -50,7 +97,6 @@ AuthorArticle
 
 Dispatcher
 	Uses new pageTimer() for transaction microtiming
-
 Page
 	add setLocation() function which does an RFC conformant redirect.  Also update uses of 
 	header( "Location:...) to use $this->setLocation()

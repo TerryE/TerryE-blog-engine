@@ -1,4 +1,5 @@
 <?php
+##requires class TemplateEN_admin
 /** 
  *  Process admin page. 
  *  As a general strategy, the admin functions as an option on the appropriate page if the user
@@ -68,7 +69,6 @@ class AdminPage extends Page {
 		if( $cxt->login && $cxt->loginemail && $cxt->password ) {
 			$userData = $this->db->getUserDetails( $cxt->loginemail, md5( $cxt->password ) );
 		}
-
 		if( sizeof( $userData ) != 0 ) {
 			$cxt->set( 'user', $userData['name'] );
 			$cxt->set( 'token', md5( $cxt->salt . md5( $cxt->password ) ) ); 
