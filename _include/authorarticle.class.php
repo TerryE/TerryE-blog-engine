@@ -70,7 +70,6 @@ class AuthorArticle {
 		$fileTime  = file_exists( $fileName ) ? filemtime( $fileName ) : 0;
 
 		if( $this->date_edited > $fileTime ) {
-
 			// Create a file copy if the last edit time is newer than the file (or it doesn't exist)
 			$this->createArticleFileCopy( $fileName );
 
@@ -179,7 +178,9 @@ class AuthorArticle {
 		}
 
 		$new['title']       = $t[1];
-		$new['details']     = HtmlUtils::cleanupHTML( $d[1], HtmlUtils::ARTICLE );
+		$utils 				= new HtmlUtils( $this->cxt );
+		$new['details']     = $utils->cleanupHTML( $d[1], HtmlUtils::ARTICLE );
+		unset( $utils );
 		$new['date_edited'] = $fileTime;
 
 		if( preg_match( '! <a \s+ name \s*=\s* "endtaster" \s*> !xi', $new['details'], $m, PREG_OFFSET_CAPTURE ) ) {
@@ -283,8 +284,10 @@ class AuthorArticle {
 		if( $this->cxt->article_content ){
 			$oldKeywords = $this->keywords;
 
- 			$content = HtmlUtils::cleanupHTML( html_entity_decode( $this->cxt->article_content ), 
-			                                   HtmlUtils::ARTICLE );
+			$utils	 = new HtmlUtils( $this->cxt );
+ 			$content = $utils->cleanupHTML( html_entity_decode( $this->cxt->article_content ), 
+			                                HtmlUtils::ARTICLE );
+			unset( $utils );
 
 			list( $header, $this->details ) = preg_split( '!<hr/>.!s', $content, 2 );
 

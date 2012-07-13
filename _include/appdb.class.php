@@ -172,7 +172,7 @@ class AppDB extends mysqli {
 		if ( $type == '#' && isset( $this->arguments[ $arg - 1 ] ) ) {
 			$arg = $this->arguments[ $arg - 1 ];
 			if( is_array( $arg ) ) {
-				foreach ( $arg as $k -> $v ) {
+				foreach ( $arg as $k => $v ) {
 					if( !preg_match( '/^[a-z]\w+$/i', $k ) ) {
 						throw new Exception( "Invalid SQL query substitution parameter: $k" );
 					}

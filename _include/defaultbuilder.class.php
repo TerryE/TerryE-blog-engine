@@ -19,7 +19,7 @@ class DefaultBuilder extends AbstractBuilder {
 	 * The reason for this is that when testing and debugging, it is easier if any logged errors 
 	 * simply point to specific lines in the orginal source.
 	 *
-	 * @param $includeDir Bootstrap context include directory
+	 * @param $includeDir Bootstrap context include directory (not use in non-bootstrap builders)
 	 * @param $context    AppContext object to be used
 	 */
 	public function __construct( $className, $includeDir, $cxt ) {

@@ -17,7 +17,7 @@
  *
  *
  */
-class HtmlBuilder implements AbstractBuilder {
+class HtmlBuilder extends AbstractBuilder {
 
 //-============== Properies and functions that are not needed in the runtime version ================
 
@@ -40,8 +40,13 @@ class HtmlBuilder implements AbstractBuilder {
 	 *	- 	"!" prefix is used to force a CR before the opening tag in the output.  	
 	 *
 	 * Note that the lamda functions invoke callback static methods.
-	 */	
-	public static function build ( $className ) {
+	 *
+	 * @param $className  Name of class to be build
+	 * @param $dummy      Bootstrap context include directory (not use in non-bootstrap builders)
+	 * @param $context    AppContext object to be used
+	 */
+	public function __construct( $className, $dummy, $cxt ) {
+		$this->cxt = $cxt;
 
 		// Pick up tail content which needs to included in class 
 		$thisSource		= file_get_contents( __FILE__ );
@@ -62,7 +67,7 @@ class HtmlBuilder implements AbstractBuilder {
 				$optTagEnd	= $noEndTag	? '' : "</$tag>";
 				$optCR		= $forceCR	? '\n' : '';
 
-				$protoCcode = "private static function {$type}_{$tag}( \$endTag, \$attr ) {"; 
+				$protoCcode = "private function {$type}_{$tag}( \$endTag, \$attr ) {"; 
 
 				if( count($attrs) == 0 ) {
 					// The code for no attibute tags is reasonably straight forward e.g.
@@ -86,16 +91,19 @@ class HtmlBuilder implements AbstractBuilder {
 				}
 
 				$returnCode = $extn ? 
-							  "return self::{$tag}Extn(\$endTag, \$attr, $tagCode);\n}\n" :
+							  "return \$this->{$tag}Extn(\$endTag, \$attr, $tagCode);\n}\n" :
 							  "return $tagCode;\n}\n";
 
 				$tagFunctions[] = "$protoCcode$code\n$returnCode";
 			}
 		}
-		$outSource	= "<?php\nclass HtmlUtils {\n" . implode( "\n", $tagFunctions ) . $inSource;
-		$outfile	= AppContext::get()->cacheDir . "html.utils.class.php";
-		file_put_contents( $outfile, $outSource, LOCK_EX );
-		return $outfile;
+		$outSource	= '<?php
+class HtmlUtils {
+	private $cxt; 
+	public function __construct( $cxt ) { $this->cxt=$cxt; }
+' 					. implode( "\n", $tagFunctions ) . $inSource;
+		$this->loadFile	= $cxt->cacheDir . "html.utils.class.php";
+		file_put_contents( $this->loadFile, $outSource, LOCK_EX );
 	}
 
 //+================ Properties and methods that are maintained in the runtime version =================
@@ -126,7 +134,7 @@ class HtmlBuilder implements AbstractBuilder {
  * how this works is to view the generated HtmlUtils class. 
  * 
  */
-	public static function cleanupHTML( $sourceHTML, $type ) {
+	public function cleanupHTML( $sourceHTML, $type ) {
 
 		$prefix		= ($type == self::ARTICLE) ? 'article_' : 'comment_';
 		$newHTMl	= array();
@@ -174,7 +182,7 @@ class HtmlBuilder implements AbstractBuilder {
 				if( $content == '' ) continue;
 
 				// For content text outside PRE tags, compress whitespace and wrap to avoid line becomming too long.
-				if( !self::$inPreTag ) {
+				if( !$this->inPreTag ) {
 					$content	= preg_replace( '![\s\r\n]+!', ' ', $content );
 					$lineTail	= ($lineLength < self::LINE_WRAP ) ? self::LINE_WRAP - $lineLength : 1;
 					$content	= preg_replace( "! (.{{$lineTail}} \S* )\s !x", "\$1\n", $content, 1 );
@@ -198,37 +206,38 @@ class HtmlBuilder implements AbstractBuilder {
 		return implode ( "", $newHTML ) . "\n";
 	}
 
-	static private $inPreTag		= FALSE;
-	static private $inLiTag			= array();
-	static private $validSpanTag	= array();
+	private $inPreTag		= FALSE;
+	private $inLiTag		= array();
+	private $validSpanTag	= array();
+
 
 	//============================== Non-standard processing extensions ==============================
 
 	/**
 	 * The ul extension closes li tags when parsing HTML to conform to XHTML
 	 */
-	private static function ulExtn($endTag,$attrs,$newTag) { 
-		if( !$endTag ) array_unshift( self::$inLiTag, false );
-		elseif( array_shift( self::$inLiTag ) ) $newTag = "</li>$newTag"; 
+	private function ulExtn($endTag,$attrs,$newTag) { 
+		if( !$endTag ) array_unshift( $this->inLiTag, false );
+		elseif( array_shift( $this->inLiTag ) ) $newTag = "</li>$newTag"; 
 		return $newTag;
 	}
 
 	/**
 	 * The ol extension closes li tags when parsing HTML to conform to XHTML
 	 */
-	private static function olExtn($endTag,$attrs,$newTag) {
-		return self::ulExtn($endTag,$attrs,$newTag);
+	private function olExtn($endTag,$attrs,$newTag) {
+		return $this->ulExtn($endTag,$attrs,$newTag);
 	}
 
 	/**
 	 * The li extension closes li tags when parsing HTML to conform to XHTML
 	 */
-	private static function liExtn($endTag,$attrs,$newTag) {
+	private function liExtn($endTag,$attrs,$newTag) {
 		if( $endTag ) {
-			self::$inLiTag[0] = false; 
+			$this->inLiTag[0] = false; 
 		} else {
-			if( self::$inLiTag[0] ) $newTag = "</li>$newTag";
-			else self::$inLiTag[0] = true;
+			if( $this->inLiTag[0] ) $newTag = "</li>$newTag";
+			else $this->inLiTag[0] = true;
 		}
 		return $newTag;
 	}
@@ -236,9 +245,9 @@ class HtmlBuilder implements AbstractBuilder {
 	/**
 	 * The span extension filters the attributes and only permits the color and underline attributes. Empty spans are removed. 
 	 */
-	private static function spanExtn($endTag,$attrs,$newTag) {
+	private function spanExtn($endTag,$attrs,$newTag) {
 		if( $endTag ) {
-			return array_shift( self::$validSpanTag ) ? $newTag : ''; 
+			return array_shift( $this->validSpanTag ) ? $newTag : ''; 
 		} else {
 			$newTag = isset( $attrs['class'] ) ? "class=\"$attrs[class]\"" : ""; 
 			if( preg_match_all( '/ \s* (\S+) \s* : \s* ([^;]+) /x', strtolower( $attrs['style'] ), $m, PREG_PATTERN_ORDER ) ) {
@@ -249,7 +258,7 @@ class HtmlBuilder implements AbstractBuilder {
 		        if( $newStyle !== '' ) $newTag .= " style=\"$newStyle\""; 
 			}
 			$valid = ( $newTag !== '' );
-			array_unshift( self::$validSpanTag, $valid );
+			array_unshift( $this->validSpanTag, $valid );
 			return $valid ? "<span $newTag>" : ''; 		 
 		}
 	}
@@ -257,8 +266,7 @@ class HtmlBuilder implements AbstractBuilder {
 	/**
 	 * The img extension maps the align tag onto the equivalent style. 
 	 */
-	private static function imgExtn($endTag,$attrs,$newTag) {
-//		$this->cxt->debugVar( "image tag", array ( $endTag, $attrs, $newTag ) );
+	private function imgExtn($endTag,$attrs,$newTag) {
 		if( $endTag || !isset( $attrs['align'] ) || isset( $attrs['style'] ) ) return $newTag;
 		return substr( $newTag, 0, -2 ) . "style=\"float:$attrs[align];\"" . '/>';
 	}
@@ -266,7 +274,7 @@ class HtmlBuilder implements AbstractBuilder {
 	/**
 	 * The font extension replaces \<font color="xx"\> with the \<span style="color: xx"\> equivalent 
 	 */
-	private static function fontExtn($endTag,$attrs,$newTag) {
+	private function fontExtn($endTag,$attrs,$newTag) {
 		if( $endTag ) return '</span>';
 		return "<span style=\"color:$attrs[color];\">";
 	} 
@@ -274,7 +282,7 @@ class HtmlBuilder implements AbstractBuilder {
 	/**
 	 * The u extension replaces the tag with the XHTML 1.0 conformant style equivalent
 	 */
-	private static function uExtn($endTag,$attrs,$newTag) {
+	private function uExtn($endTag,$attrs,$newTag) {
 		if( $endTag ) return '</span>';
 		return '<span style="text-decoration:underline;">';
 	} 
@@ -282,8 +290,8 @@ class HtmlBuilder implements AbstractBuilder {
 	/**
 	 * The pre extension sets a global inPreTag flag.  (When this is false, whitespace within content is collapsed)
 	 */
-	private static function preExtn($endTag,$attrs,$newTag) {
-		self::$inPreTag = !$endTag; 
+	private function preExtn($endTag,$attrs,$newTag) {
+		$this->inPreTag = !$endTag; 
 		return $newTag; 
 	}
 }

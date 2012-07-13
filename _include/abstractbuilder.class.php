@@ -104,7 +104,6 @@ abstract class AbstractBuilder {
 	 * @returns the file name to be loaded by the autoloader
 	 */
 	public function getLoadFile() {
-error_log( "Loading {$this->loadFile}" );
 		return $this->loadFile;
 	}
 }
