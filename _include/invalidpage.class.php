@@ -4,9 +4,14 @@
  */ 
 class InvalidPage extends Page {
 
-	public function __construct() {
+	/**
+	 * Invalid Page constructor.  This simple calls the parent invalidPage method.
+	 * @param $cxt   AppContext instance 
+	 */
 
-		parent::__construct();
+	public function __construct( $cxt ) {
+
+		parent::__construct( $cxt );
 		$this->invalidPage();
 	}
 }

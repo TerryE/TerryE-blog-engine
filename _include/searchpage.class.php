@@ -7,9 +7,13 @@
  */ 
 class SearchPage extends Page {
 
-	function __construct() {
+	/** 
+	 * Constructor.  The contructor carries out the search functions.
+	 * @param $cxt   AppContext instance 
+     */
+	function __construct( $cxt ) {
 
-		parent::__construct();
+		parent::__construct( $cxt );
 		$this->cxt->allow( 'Pq' );
 		$cacheName = NULL;
 

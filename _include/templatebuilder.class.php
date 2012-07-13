@@ -25,10 +25,6 @@
  * therefore invoked only when the compiled class does not exist, and its job is to read in the
  * specified HTML template and to translate it into the corresponding PHP class.  
  *
- * Unlike the other builders, this TemplateBuilder does have a sufficently complex method and 
- * property set to merit adopting the standard PHP single-object class pattern.  Hence the static 
- * build method is a wrapper for <tt>self::get()->generate( ... )</tt>.     
- * 
  * Note that the reason for embedding the National Language (\b NL) code in the class name is simple: 
  * this way each generated template class is language-specific, e.g. \b Template_EN_article,
  * \b Template_FR_article and any language-specific resource translation / mapping is hoisted to the 
@@ -107,46 +103,27 @@
  * -  This is the third incarnation of my templating engine originally inspired by Vemplator 0.6.1 
  *    by Alan Szlosek.  My thanks to Alan for this original work.
  */
-class TemplateBuilder implements AbstractBuilder {
-	/**
-	 * This class uses a standard single class object pattern.
-	 */
-    private static $_instance;
-	private static $_class = __CLASS__;
-    private function __clone() {}
-	/**
-	 * Initialise the compiler context. This is a static method since only one compiler instance is allowed,
-	 */
-	public static function get() {
-		return isset(self::$_instance) ? self::$_instance : (self::$_instance = new self::$_class);
-	}
+class TemplateBuilder extends AbstractBuilder {
 
 	private $templateVars;			//< used to track which variables are referenced in the template
-	private $langRtn;				//< local copy of cxt->translateRtn
+	private $cxt;					//< local copy of the AppContext object
 
 	/**
-	 * Initialise the compiler context. 
+	 * Initialise the compiler context.
+	 * @param $className  Name of class to be build
+	 * @param $includeDir Bootstrap context (not used in this builder)
+	 * @param $context    AppContext object to be used
 	 */
-	private function __construct() {
+	public function __construct( $className, $includeDir, $cxt ) {
 		$this->templateVars = array();
-	}
-
-	/**
-	 * Standard static build method for autoloaded builder classes.
-	 * This instantiates the builder object with a get() and then invokes the generate() function.
-	 */
-	public static function build ( $className ) {
-
+		$this->cxt          = $cxt;
 		$lang				= substr( $className, 8, 2 );
 		$template			= substr( $className, 11 );
-		$cxt				= AppContext::get();
 		$template			= str_replace( '_', '.', strtolower( $template ) );
 		$compiledTemplate	= $cxt->cacheDir . 'template' . strtolower( $lang ) . ".$template.class.php";
 		$inputTemplate		= $cxt->templateDir . $template . '.html';
-
-		// Do the template compile
-		self::get()->generate( $lang, $className, $inputTemplate, $compiledTemplate );
-		return $compiledTemplate;
+		$this->generate( $lang, $className, $inputTemplate, $compiledTemplate );
+		$this->loadFile		= $compiledTemplate;
 	}
 
 	/**
@@ -154,8 +131,7 @@ class TemplateBuilder implements AbstractBuilder {
 	 */
 	public function generate( $lang, $className, $templateFile, $compiledFile ) {
 
-		$cxt			= AppContext::get();
-		$this->langRtn	= $cxt->translateRtn;
+		$cxt			= $this->cxt;
 		$source 		= file_get_contents( $templateFile );
 		$templateDir	= dirname ( $templateFile );
 
@@ -205,7 +181,8 @@ class TemplateBuilder implements AbstractBuilder {
 		$wantedVars = strtolower( implode( ':', array_keys( $this->templateVars ) ) );
 		$this->templateVars = array();
 		$translatedSource = 
-"<?php class $className {
+"<?php
+class $className {
 public function __construct(\$data, \$context) { 
 foreach ( explode (':','$wantedVars') as \$v) {
 \$ucvar='var'.strtoupper(\$v);
@@ -255,8 +232,6 @@ foreach ( explode (':','$wantedVars') as \$v) {
 	*/ 
 	private function transformSyntax( $input ) {
 
-		$langRtn = $this->langRtn;
-
 		if ( !preg_match( '! ^\s* (?: ( ELSE | ENDIF | ENDSWITCH | ENDFOR | ) \s* | 
 			                          ( IF | ELSEIF | SWITCH |CASE |FOREACH |INCLUDE|TR ) \s*:\s* (.*) | 
 				                      ( // ) .* |
@@ -288,10 +263,10 @@ foreach ( explode (':','$wantedVars') as \$v) {
 			case 4:						# Keywords with one or more arguments
 				if( $parse[2] == 'TR') {# TR is handled separately since variable subst is not done in the trans string
 					$args = preg_split('/(?<!\\\\):/', $parse[3]);	
+
 					$langStr = str_replace( '\\:', ':', array_shift( $args ) );
-					if( isset($langRtn) ) {
-						$langStr = $langRtn( $langStr );
-					}
+					$langStr = $this->cxt->getTranslation( $langStr );
+
 					if( sizeof( $args ) == 0 ) {
 						return $langStr;  #########  Note early exit for bare translation ########
 					}

@@ -36,41 +36,39 @@
 
 class AppContext {
 
-    private static $_instance;
-	private static $_class = __CLASS__;
-    private function __clone() {}
-
-	/**
-	 * Initialise the blog context. This is a static method since only one AppContext instance is 
-	 * allowed. On first invocation, the private constructor is called to load the blog context from 
-	 * the config table and some user and page context from cookies and the page request parameter.
-	 */
-	public static function get() {
-		if ( !isset( self::$_instance) ) self::$_instance = new self::$_class();
-		return self::$_instance;
-	}
-
 	private $attrib;				// Std class used to hold context attributes
 	private $attribType;			// Array used to hold context type (used in set function)
+
 	/*
 	 * Load the blog context
+	 * @param $bootstrapContext  A 6 parameter context defined and documented in \ref index.php. 
 	 */
-	private function __construct() {
+	public function __construct( $bootstrapContext ) {
 
-		$this->attrib		= new stdClass;
-		$this->attribType	= array();
-		$a					= $this->attrib;
-		$a->rootDir			= ROOT_DIR;
-		$db 				= AppDB::get();   //  Connect to AppDB
+		//  Instantiate the  AppLogger, AppDB and stdClass container for publicly readable context properties 
+		$log	= new AppLogger( 
+					"$_SERVER[REQUEST_METHOD]\t$_SERVER[REQUEST_URI]\t$_SERVER[HTTP_USER_AGENT]",
+					$bootstrapContext['START_TIME']
+					);
+		$db		= new AppDB( $bootstrapContext['DB_CONTEXT'], $log );   
+		$a		= new stdClass;
+
 		$a->db				= $db;
+		$a->log				= $log;
+		$a->rootDir			= $bootstrapContext['ROOT_DIR'];
+
+		$this->attrib		= $a;
+		$this->attribType	= array();
 
 		// Define access functions used in context processing
 		$db->declareFunction( array(
-'getConfig'		=> "Set=SELECT * FROM :config",
-'checkPassword'	=> "Row=SELECT MD5(CONCAT('#1',password)) AS token, flag, email FROM :members WHERE name = '#2'",
-'insertMessage'	=> "INSERT INTO :messages (message, time) VALUES ('#1', UNIX_TIMESTAMP(NOW()))", 
-'getMessage' 	=> "Val=SELECT message FROM :messages WHERE id='#1'",
-'pruneMessages' => "DELETE FROM :messages WHERE time<(UNIX_TIMESTAMP(NOW())-#1)",
+'getConfig'			=> "Set=SELECT * FROM :config",
+'checkPassword'		=> "Row=SELECT MD5(CONCAT('#1',password)) AS token, flag, email FROM :members WHERE name = '#2'",
+'insertMessage'		=> "INSERT INTO :messages (message, time) VALUES ('#1', UNIX_TIMESTAMP(NOW()))", 
+'getMessage' 		=> "Val=SELECT message FROM :messages WHERE id='#1'",
+'pruneMessages' 	=> "DELETE FROM :messages WHERE time<(UNIX_TIMESTAMP(NOW())-#1)",
+'getTranslation'	=> "Val=SELECT phrase FROM :language WHERE id = '#1' AND lang_code = '#2'",
+'insertTranslation' => "INSERT INTO :language VALUES ('#1', '#2', '#3')",
 		) );
 
 		// Fetch the config table from the database and add to context
@@ -86,7 +84,7 @@ class AppContext {
 		$a->templateDir	 = $a->rootDir . DIRECTORY_SEPARATOR . $a->templateDir . DIRECTORY_SEPARATOR;
 		$a->cacheDir	 = isset( $a->cacheDir ) ? 
 							$a->rootDir . DIRECTORY_SEPARATOR . $a->cacheDir . DIRECTORY_SEPARATOR :
-							CACHE_DIR . DIRECTORY_SEPARATOR;
+							$bootstrapContext['CACHE_DIR'] . DIRECTORY_SEPARATOR;
 
 		if( isset( $a->includeDir ) ) {
 			// includeDir is a searchlist so unpack to array, again each with rootDir prefix and trailing / 
@@ -95,7 +93,7 @@ class AppContext {
 			}
 			$a->includeDir  = $includes; 
 		} else {
-			$a->includeDir  = INC_DIR . DIRECTORY_SEPARATOR; 
+			$a->includeDir  = $bootstrapContext['INC_DIR'] . DIRECTORY_SEPARATOR; 
 		}
 
 		$a->keywordList	= unserialize( $a->_keywords ); 
@@ -115,7 +113,7 @@ class AppContext {
 		}
 
 		if( isset( $a->debugFile ) ) {
-			AppLogger::get()->setLog( $a->debugFile );
+			$log->setLog( $a->debugFile );
 		}
 
 		// Check if the user is logged on.  This is determined from the user and token cookies. So
@@ -345,5 +343,34 @@ class AppContext {
 			}
 		}
 		return $msg;
+	}
+
+	/**
+	 * Handle National Language lookup.  This application and the templating system (described in the 
+	 * class TemplateBuilder) is designed to be National Language (NL) capable.  All text resources are
+	 * accessed through this \b getTranslation function.  This current implementation is more of a 
+	 * hook since the current version is implemented in English.  However each phrase to be translated is 
+	 * written to the language table in the D/B. This hook enables the blog engine to implement another 
+	 * NL by: 
+	 *  - Translating (and adding) the entries in the language table to the target NL. 
+	 *  - Decoding the NL context to the set the AppContext property \b languageCode. 
+	 * This rotine will then return the text content for the target NL.
+	 *     
+	 * @param $phrase The phrase to be translated
+	 * @return The translation of the phrase.
+	 */
+	public function getTranslation( $phrase ) {
+
+		$lang = $this->attrib->languageCode;
+		if( $lang != 'EN' ) return '????';
+
+		$id = md5( $phrase );
+		$translation = $this->db->getTranslation($id, $lang );
+
+		if( $translation == NULL ) {
+			$this->db->insertTranslation( $id, $lang, $phrase );
+			$translation = $prhase;
+		}
+		return $translation;
 	}
 }

@@ -8,23 +8,8 @@
  *   to database through application-specific access methods, which mapped to these base methods and
  *   also handle any parameter escaping.  See AppDB::declareFunction for further details.
  */
+
 class AppDB extends mysqli {
-
-	/**
-	 * This class uses a standard single class object pattern.
-	 */
-    private static $_instance;
-	private static $_class = __CLASS__;
-    private function __clone() {}
-	/**
-	 * Initialise the DB context. This is a static method since only one AppDB instance is allowed. The
-	 * $connectParams must be provided on first invocation.
-	 */
-	public static function get() {
-
-		if ( !isset( self::$_instance) ) self::$_instance = new self::$_class ();
-		return self::$_instance;
-	}
 
 	private $query;				/**< Array of registered SQL queries */
 	public  $tablePrefix;		/**< Table prefix to be applied to all tables */
@@ -32,24 +17,29 @@ class AppDB extends mysqli {
 
 	/**
 	 * AppDB constructor. Connect to the database and initialise the list of tables with the given prefix.
+	 *
+	 * @param $dbContext  String literal containing MySQL connection information 'host:DB:user:password:tablePrefix' 
+	 * @param $logger     AppLogger instance
 	 */
-    private function __construct() {
+    public function __construct( $dbContext, $logger = NULL ) {
 
         parent::init();
-		list( $host, $db, $user, $passwd, $this->tablePrefix ) = explode ( ':', SQL_CONTEXT );
+		list( $host, $db, $user, $passwd, $this->tablePrefix ) = explode ( ':', $dbContext );
 
         if( !parent::real_connect($host, $user, $passwd, $db)) {
             throw new Exception ('Connect Error (' . 
 				mysqli_connect_errno() . ') ' . mysqli_connect_error() );
         }
-		$this->query		= array();
-		$this->tables		= array();
+		$this->query	= array();
+		$this->tables	= array();
+		$this->logger	= $logger;
 
 		// The property $tables contains a dictionary of valid table names less the prefix.
-		foreach( $this->querySet( "SHOW TABLES LIKE '{$this->tablePrefix}%'" )
-			as $table) {
-			$v = array_values( $table );
-			$this->tables[substr( $v[0], strlen($this->tablePrefix) )] = TRUE;
+
+		$this->declareFunction( array( 'getTableList'	=> "Set=SHOW TABLES LIKE '#1%'" ) ); 
+		$tOffset = strlen( $this->tablePrefix );
+		foreach( $this->getTableList( $this->tablePrefix ) as $t) {
+			$this->tables[substr( $t[key($t)], $tOffset ) ] = TRUE;
 		}
     }
 
@@ -161,10 +151,12 @@ class AppDB extends mysqli {
 				$rtn = $this->query( $query );      break;
 		}
 
-		$time = round( ( microtime( TRUE ) - $time ) * 100000 );
+		$time = round( ( microtime( TRUE ) - $time ) * 1000, 2 );
 
-		AppLogger::get()->log( "SQL\t$time\t" . preg_replace( '/[ \t\n]+/', ' ', $query ) );
-	
+		if( is_object( $this->logger ) ) {
+			$this->logger->log( sprintf( "SQL\t%.2f\t%s",$time  , preg_replace( '/[ \t\n]+/', ' ', $query ) ) );
+		}
+
 		return $rtn;
 	}
 

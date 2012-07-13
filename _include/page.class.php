@@ -23,10 +23,11 @@ class Page {
 
 	/**
 	 * Page constructor.  This is called by any page class which extends Page to set up command attributes 
+	 * @param $cxt   AppContext instance
 	 */
-	public function __construct( ) {
+	public function __construct( $cxt ) {
 		$this->data			= new stdClass;
-		$this->cxt			= AppContext::get();
+		$this->cxt			= $cxt;
 		$this->db			= $this->cxt->db;
 		$this->language		= $this->cxt->languageCode;
 		$this->langRtn		= $this->cxt->translateRtn;
@@ -39,9 +40,6 @@ class Page {
 		) );
 
 		$this->init();
-//$redirects = array();
-//foreach( $_SERVER as $k=>$v ) { if( substr($k,0,9)=='REDIRECT_' ) { $redirects[substr($k,9)]=$v; } }
-//debugVar( 'redirects', $redirects );
 	}
 
 	/**
@@ -301,5 +299,14 @@ class Page {
 					'';
  		header( "Location: http://{$cxt->server}/{$newLocation}{$cid}{$anchor}" );
 		header( 'Status: 302' );
+	}
+
+	/**
+	 * Debug var_export to file
+	 * @param $title   Title to prefix variable dump
+	 * @param $var     Variable to be dumped to debug log
+	 */
+	function debugVar($title, $var) { 
+		 $this->cxt->log->log( "$title=\t" . var_export($var, true) );
 	}
 }

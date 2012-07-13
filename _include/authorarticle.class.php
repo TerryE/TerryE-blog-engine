@@ -6,34 +6,24 @@
  * accessed relatively infrequently and hence the helper AuthorArticle object only created when needed. 
  */
 class AuthorArticle {
-	/**
-	 * This class uses a standard single class object pattern.
-	 */
-    private static $_instance;
-	private static $_class = __CLASS__;
-    private function __clone() {}
-	/**
-	 * Initialise the blog context. This is a static method since only one AppContext instance is 
-	 * allowed.  
-	 * @param $page  Page instance of invoking articlePage.  
-	 * This function can take an optional allowed parameter 
-	 */
-	public static function get($page) {
-		return isset(self::$_instance) ? self::$_instance : (self::$_instance = new self::$_class($page) );
-	}
 
     private $page;
 	private $isAdmin;
     private $cxt;
 	private $db;
-	private $req;
 
-	private function __construct( $page ) {
+	/**
+	 * AuthorArticle constructor. Carry out processing to enable create and update functions on an article.
+	 *
+	 * @param $page    Article Page object which is requesting CU functions on article
+	 * @param $cxt     AppContext instance
+	 */
+	public function __construct( $page, $cxt ) {
 
 		$this->page		= $page;
-		$this->cxt		= AppContext::get();
-		$this->db		= AppDB::get();
-		$this->isAdmin	= $this->cxt->isAdmin;
+		$this->cxt		= $cxt;
+		$this->db		= $cxt->db;
+		$this->isAdmin	= $cxt->isAdmin;
 		
 		$this->db->declareFunction( array(
 'updateArticle'		=> "UPDATE :articles SET #2 WHERE id=#1", 
@@ -179,13 +169,13 @@ class AuthorArticle {
 
 		// Pick up the title and details in the matches arrays $t and $d
 		if( !preg_match( '!<h1.*?> (.*?) </h1> !xis', $newHTML, $t ) ) {
-			return 'error:' . getTranslation( 'Title H1 not found.' ) ; 
+			return 'error:' . $this->cxt->getTranslation( 'Title H1 not found.' ) ; 
 		}
 		if( !preg_match( '!<body.*?> .*? 
 						  <div \s+ id="main" .*?> (.*) 
 						  </div> [\s\t\r\n]+  
 						  </body>  !xsi', $newHTML, $d ) ) {
-			return 'error:' . getTranslation( 'Article body does not contain properly formatted main div.' ) ; 
+			return 'error:' . $this->cxt->getTranslation( 'Article body does not contain properly formatted main div.' ) ; 
 		}
 
 		$new['title']       = $t[1];
@@ -464,19 +454,19 @@ class AuthorArticle {
 			// included on the form to avoid needing to use sessions (and a salt so I can open-source the code).
 
 			if( $this->id != $cxt->article_id ) {
-				$info[] = getTranslation( 'Corrupt article ID. Please reenter comment.' );
+				$info[] = $cxt->getTranslation( 'Corrupt article ID. Please reenter comment.' );
 			}
 			if( $cxt->time < time() - 1800 ) {
-				$info[] = getTranslation( 'Session expired. Please reenter comment.' );
+				$info[] = $cxt->getTranslation( 'Session expired. Please reenter comment.' );
 			}
 			if( $cxt->author == '' ) {
-				$info[] = getTranslation( 'You must enter a name.' );
+				$info[] = $cxt->getTranslation( 'You must enter a name.' );
 			}
 			if( $mailaddr === FALSE ) {
-				$info[] = getTranslation( 'You must specify a valid confirmation_email' );
+				$info[] = $cxt->getTranslation( 'You must specify a valid confirmation_email' );
 			}
 			if( $cxt->token != $correct_token ) {
-				$info[] = getTranslation( 'Wrong answer.  Try again.' );
+				$info[] = $cxt->getTranslation( 'Wrong answer.  Try again.' );
 			}
 			if( $cxt->cookie == 1 ) {
 				$cxt->set( 'user', $author );
@@ -523,7 +513,7 @@ class AuthorArticle {
 				// so update the article comment count and refresh to the comments anchor  
 				$this->db->updateCommentCnt( $this->id );
 				$this->page->purgeHTMLcache();
-				$info[] = getTranslation( 'Comment registered.' );
+				$info[] = $cxt->getTranslation( 'Comment registered.' );
 
 			} else {
 
@@ -535,7 +525,7 @@ class AuthorArticle {
 					'comment_uid'=> md5( "{$this->cxt->salt}$mailaddr:$commentID" ),
 					 ) );
 				$mailMsg = $this->page->output( 'confirm_email', TRUE );
-				$mailSubject = sprintf( getTranslation( 'Confirmation of comment on post %s' ),  $this->title );
+				$mailSubject = sprintf( $cxt->getTranslation( 'Confirmation of comment on post %s' ),  $this->title );
 				$mailHeaders = implode ("\r\n", array( 
 					"From: do_not_reply@ellisons.org.uk",
 					"MIME-Version: 1.0",
@@ -549,7 +539,7 @@ class AuthorArticle {
 /*TESTING*/debugVar( 'mailHeaders', $mailHeaders );
 /*TESTING*/debugVar( 'mailMsg', $mailMsg );
 /*TESTING*/#	mail( $mailaddr, $mailSubject, $mailMsg, $mailHeaders );
-				$info[] =	getTranslation( 'Comment registered.  It will be displayed after email confirmation' );
+				$info[] =	$cxt->getTranslation( 'Comment registered.  It will be displayed after email confirmation' );
 			}
 			$resp = array(
 				'status' => 'OK', 

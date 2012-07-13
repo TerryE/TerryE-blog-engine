@@ -11,9 +11,13 @@
  */
 class PhotoPage extends Page {
 
-	function __construct() {
+	/** 
+	 * Constructor.  The contructor decodes the subpage to dispatch to the album and photo functions.
+	 * @param $cxt   AppContext instance 
+     */
+	function __construct( $cxt ) {
 
-		parent::__construct();
+		parent::__construct( $cxt );
 		$subPage = $this->cxt->subPage;
 		$subOpt  = $this->cxt->subOpt;
 

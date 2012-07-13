@@ -27,17 +27,18 @@
  */ 
 class ArticlePage extends Page {
 
-    public $article;        //< Copy of article, accessed by invoked AuthorArticle.
+    public  $article;       //< Copy of article, accessed by invoked AuthorArticle.
 	private $admin;			//< AuthorArticle object if the user is an article admin
 
 	/** 
-	  * Constructor
-	  * @param $id optional to force page ID.  Used by the About page.
-      */
-	function __construct( $id = NULL ) {
+	 * Constructor
+	 * @param $id    optional to force page ID.  Used by the About page.
+	 * @param $cxt   AppContext instance 
+     */
+	public function __construct( $cxt, $id = NULL ) {
 
-		parent::__construct();
-		$cxt = $this->cxt;
+		parent::__construct( $cxt );
+
 		$cxt->allow( '#commentaccepted#edit#comments:commentpost:save:comment' );
 
 		// Define AppDB access functions used in PhotoPage
@@ -57,7 +58,7 @@ class ArticlePage extends Page {
 		$this->article['datetime'] = date( 'D jS F Y, g:i a', $this->article['date'] );
 
 		// If the user is an Admin then load the author utilities
-		$this->admin   = $cxt->isAdmin ? AuthorArticle::get( $this ) : NULL;
+		$this->admin   = $cxt->isAdmin ? new AuthorArticle( $this, $this->cxt ) : NULL;
 
 		// Flag an error if the request is for an invalid or hidden article
 		if( sizeof($this->article) == 0 || ( !$this->admin && $this->article['flag'] == 0 ) ) {
@@ -80,7 +81,7 @@ class ArticlePage extends Page {
 			case 'edit':	$this->processSubmittedEdit();		return; 
 
 			default:	 
-				$this->assign( 'error', getTranslation( 'The requested article cannot be found.' ) ); 
+				$this->assign( 'error', $cxt->getTranslation( 'The requested article cannot be found.' ) ); 
 		}
 
 		// Finally drop through to display the admin page
@@ -101,17 +102,16 @@ class ArticlePage extends Page {
 	private function processSubmittedComment() {
 
 		// Process a returned login form if any (triggered by the existance of the login post variable).
-		$cxt = $this->cxt;
 		$id  = $this->article['id'];
 		if( $cxt->commentpost ) {
 
 			// AuthorArticle::processComment returns a properly formatted message return 
-			$commentStatus = AuthorArticle::get($this)->processComment();
-			$cxt->setMessage( $commentStatus );
+			$aa = $this-admin ? $this-admin : new AuthorArticle( $this, $this->cxt );
+			$commentStatus = $aa->processComment();
+			$this->cxt->setMessage( $commentStatus );
 
 			// If there is an error in the comment return, then reenable comment on refresh
 			$cmt = ( $commentStatus['status'] == 'ERROR' ) ? "?comments=enabled" : "";
-#			$cmt = ( $commentStatus['status'] == 'ERROR' ) ? "?comments=enabled&qqdebug=1" : "";
 			$this->setLocation( "article-{$id}{$cmt}", '#postcomment' );
 
 		} else {
@@ -198,7 +198,8 @@ class ArticlePage extends Page {
 				 *    refresh meta otherwise the comments form is (re)displayed.
 				 */
 				$cxt->allow( ':author:code:comment:cookie:mailaddr*user*email' );
-				AuthorArticle::get($this)->generateCommentForm();
+				$aa = $this->admin ? $this->admin : new AuthorArticle( $this, $this->cxt );
+				$aa->generateCommentForm();
 			}
 		}
 

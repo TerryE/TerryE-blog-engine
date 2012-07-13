@@ -4,18 +4,18 @@
  *  articles. The length of each prelim is set by the article field \b trim_length which is itself 
  *  calculated on article update from the position of the \b endtaster anchor.
  */ 
-class IndexPage extends Page {
-
+class HomePage extends Page {
 	/**
-	 * Article constructor, which display the index page
+	 * Article constructor, which display the blog home page
+	 * @param $cxt   AppContext instance 
 	 */
-	function __construct() {
+	function __construct( $cxt ) {
 
-		parent::__construct();
+		parent::__construct( $cxt );
 		$cxt = $this->cxt;
 		$cacheName = NULL;
 
-		// Define AppDB access functions used in IndexPage
+		// Define AppDB access functions used in HomePage
 
 		$this->db->declareFunction( array(
 'getHomeArticles' => "Set=SELECT  title, author, id, encoding, comment_count, 

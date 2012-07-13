@@ -5,9 +5,13 @@
  */
 class RssPage extends Page {
 
-	function __construct() {
+	/** 
+	 * Constructor.  The contructor carries out the generation of the RSS feed functions.
+	 * @param $cxt   AppContext instance 
+     */
+	function __construct( $cxt ) {
 
-		parent::__construct();
+		parent::__construct( $cxt );
 
 		$cxt = $this->cxt;
 

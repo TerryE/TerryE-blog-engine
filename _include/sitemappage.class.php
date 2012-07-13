@@ -6,9 +6,13 @@
  */
 class SitemapPage extends Page {
 
-	function __construct() {
+	/** 
+	 * Constructor.  The contructor carries out the site map functions.
+	 * @param $cxt   AppContext instance 
+     */
+	function __construct( $cxt ) {
 
-		parent::__construct();
+		parent::__construct( $cxt );
 		$cxt = $this->cxt;
 
 		// Define AppDB access functions used in SitemapPage

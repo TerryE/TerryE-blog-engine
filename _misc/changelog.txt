@@ -1,3 +1,24 @@
+Changes at 3.1.4
+================
+
+<all> 
+	Retire the Singleton usage for AppContext, AppDB, AppLogger, AuthorArticle and TemplateBuilder.
+	This is just getting too messy and there are too many side effects.  These are now single object
+    classes where this constraint is enforced through only doing one "new" per object and passing 
+	explicit dependency parameters. 
+
+functions.php -> Dispatcher
+	A consequence of this is that a static __autoloader() can no longer access the AppContext object.
+	So I have bowed to the invitable and decided to move the autoload functionality into Dispatcher.
+	There's so little left in functions that I may as well take this opportunity to move to a full 
+    class-based model and get rid of the functions entirely. 
+
+TBD sort out static sync
+
+TBD Sort out comment notification
+
+TBD Daily "cron" job
+
 Changes at 3.1.3
 ================
 
@@ -40,10 +61,6 @@ functions.php
 
 index.php
 	Add Doxygen comments
-
-Sort out comment notification
-
-Daily "cron" job
 
 Changes at 3.1.2
 ================

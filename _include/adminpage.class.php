@@ -8,10 +8,13 @@
  *  \todo syncing, comment confirmation 
  */
 class AdminPage extends Page {
+	/** 
+	 * Constructor   Dispatch to relevant processing dependent on sub-page
+	 * @param $cxt   AppContext instance 
+     */
+	function __construct( $cxt ) {
 
-	function __construct() {
-
-		parent::__construct();
+		parent::__construct( $cxt );
 		$cxt	= $this->cxt;
 
 		// Define AppDB access functions used in AdminPage
@@ -76,7 +79,7 @@ class AdminPage extends Page {
 			$cxt->clear( 'user' );
 			$cxt->clear( 'token' );
 			$cxt->setMessage( array( 
-				'error' => getTranslation( 'Login Error: Unknown administrator or incorrect password' ),
+				'error' => $cxt->getTranslation( 'Login Error: Unknown administrator or incorrect password' ),
 				) );
 		}
 		$this->setLocation( 'admin' );
@@ -213,7 +216,7 @@ class AdminPage extends Page {
 					'article'		=> $article,
 					'comment'		=> $comment,
 					'user'			=> $user,
-					'comment_action'=> getTranslation( $action ), 
+					'comment_action'=> $cxt->getTranslation( $action ), 
 					) );
 			// This is a get request so fall through to process default admin page template.				
 			}

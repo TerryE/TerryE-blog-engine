@@ -12,12 +12,16 @@
  */ 
 class ArchivePage extends Page {
 
-	function __construct() {
+	/** 
+	 * Constructor   The contructor implements the Archive listing functions.
+	 * @param $cxt   AppContext instance 
+     */
+	function __construct( $cxt ) {
 		
-		parent::__construct();
+		parent::__construct( $cxt );
 		$cxt = $this->cxt;
 
-		// Define AppDB access functions used in PhotoPage
+		// Define AppDB access functions used in ArchivePage
 
 		$userClause = $cxt->isAdmin ? '' : 'WHERE flag=1';
 		$this->db->declareFunction( array(

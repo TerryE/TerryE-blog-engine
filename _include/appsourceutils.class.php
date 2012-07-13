@@ -3,9 +3,13 @@
  * A collection of utilities to manipulate source code
  */
 class AppSourceUtils {
+
+	private $pathList;
+
 	/**
 	 * "Compress" the given source file.
-	 * @param $source Content to be compressed
+	 * @param $sourceFile     Name of file to be compressed
+     * @param $pathList       Directory list to be scanned for the file
 	 * @param $ignoreRequires Boolean to ignore \#\#requires directives if true
 	 * @returns compressed source content
 	 *
@@ -47,15 +51,18 @@ class AppSourceUtils {
 	 * compressing on the fly, I know that I pay \a no runtime overhead for documenting properly.
 	 *
 	 */
-	static function compress( $source, $ignoreRequires ) { 
+	public function compress( $sourceFile, $pathList, $ignoreRequires ) { 
+
+		$this->pathList = $pathList;
+
 		if( !$ignoreRequires ) {
 			// scan input file replacing any include or require statements starting in column 1
 			$fullSource = preg_replace_callback( '/^ \#\#requires \s+ (\w+) \s+ (\w+)/xm', 
-						                         array( 'self', 'includeSource' ), 
-						                         $source );
-			$tokens = token_get_all($fullSource);
+						                         array( $this, 'includeSource' ), 
+						                         $this->readFile( $sourceFile ) );
+			$tokens = token_get_all( $fullSource );
 		} else {
-			$tokens = token_get_all($source);
+			$tokens = token_get_all( $this->readFile( $sourceFile  ) );
 		}
 
 		// Now pack the source code.  This is based on the Tokenizer example in the PHP Documentation
@@ -85,17 +92,17 @@ class AppSourceUtils {
 	}
 
 	/**
-	 * \b Preg_replace_callback helper function
+	 * \b Preg_replace_callback helper function. For the regexp '/^ \#\#requires \s+ (\w+) \s+ (\w+)/xm'.
 	 * @param $match the standard PHP match array.
 	 * @returns the code fragment to be included corresponding to the \a \#\#require class.
 	 *
 	 * This callback function used by compress() to include inline any required classes or function
 	 * files.  
 	 */
-	static function includeSource ( $match ) {
+	private function includeSource ( $match ) {
 
-		$cacheDir	= AppContext::get()->cacheDir;
-		$incDirs	= AppContext::get()->includeDir;
+		$incDirs	= $this->pathList;
+
 #error_log ( "Build including $match[2]" );
 
 		if( $match[1] == 'class' ) {
@@ -120,51 +127,28 @@ class AppSourceUtils {
 			*/
 			if( class_exists( $className ) ) {
 
-				array_unshift( $incDirs, $cacheDir );
-				foreach( $incDirs as $path ) {
-					if( file_exists( $path . $fileName ) ) {
-						$inFile	= $path . $fileName;
-						break;
-					}
-				}
-				if( !isset( $inFile) ) {
-					throw new Exception( "APP: class {$className} not found on include path." );
-				}
-
 				// strip the leading <?php tag.  The trailing close tag is already omitted by convention.
-				$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', file_get_contents( $inFile ), 1 );
-#error_log ( "Build $className = ". strlen($incSource). ' bytes' );
-
+				$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', $this->readFile( $fileName ), 1 );
 				return "if( !in_array( '$className', get_declared_classes() ) ) { \n$incSource }";
+
 			} else {
 				 throw new Exception ( "APP: Attempt to load unknown class $className" );
 			}
-		} else {
-
-			// This is a "##requires <filename> <funcName>" include			
-			$fileName		= preg_replace( '/[^a-z]/', '.',  strtolower( $match[1] ) ). '.php';
-			$functionName	= $match[2];
-			foreach( $incDirs as $path ) {
-				if( file_exists( $path . $fileName ) ) {
-					$inFile	= $path . $fileName;
-					break;
-				}
-			}
-			if( !isset( $inFile) ) {
-				throw new Exception( "APP: Functions file {$fileName} not found on include path" );
-			}
-
-		   /**
-			* In the case of a function module, this won't be handled by the PHP autoload and it must
-			* therefore be explicitly required as well as being returned to the \b preg_replace_callback().
-			*/
-			if( !function_exists( $functionName ) ) {
-				require( $inFile );
-			}
-
-			// strip the leading <?php tag.  The trailing close tag is already omitted by convention.
-			$incSource = preg_replace ( '/^ \s* <\?php \s* /xs', '', file_get_contents( $inFile ), 1 );
-			return "if( !function_exists( '$functionName' ) ) { $incSource }";
 		}
+	}
+
+	/**
+	 * Read the requested the given source file.
+	 * @param $sourceFile     Name of file to be compressed
+ 	 * @returns compressed source content
+	 */
+	private function readFile (	$sourceFile ) {
+
+		foreach( $this->pathList as $path ) {
+			if( file_exists( $path . $sourceFile ) ) {
+				return file_get_contents( $path . $sourceFile );
+			}
+		}
+		throw new Exception( "APP: Functions file {$sourceFile} not found on include path" );
 	}
 }

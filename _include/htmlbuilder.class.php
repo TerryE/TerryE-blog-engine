@@ -258,7 +258,7 @@ class HtmlBuilder implements AbstractBuilder {
 	 * The img extension maps the align tag onto the equivalent style. 
 	 */
 	private static function imgExtn($endTag,$attrs,$newTag) {
-//		debugVar( "image tag", array ( $endTag, $attrs, $newTag ) );
+//		$this->cxt->debugVar( "image tag", array ( $endTag, $attrs, $newTag ) );
 		if( $endTag || !isset( $attrs['align'] ) || isset( $attrs['style'] ) ) return $newTag;
 		return substr( $newTag, 0, -2 ) . "style=\"float:$attrs[align];\"" . '/>';
 	}

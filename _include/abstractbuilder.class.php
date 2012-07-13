@@ -83,18 +83,28 @@
  *    running in a Hosting shared service environment/
  *
  * Note that most builders are simple enough to be implemented by a single method call so the 
- * build function is a static class method, as there isn't really a logical entity that maps onto a 
- * builder object. However, this is a general observation rather than a firm rule and in the case of 
- * the TemplateBuilder, this does have a sufficently complex method and property set to merit 
- * adopting the standard PHP single-object class pattern, and here the build method is a wrapper
- * for <tt>self::get()->generate( ... )</tt>.     
+ * main build function is in the constructor method.  However, getLoadFile() is used to recover the
+ * filename of the generated class.
  * 
  */
-interface AbstractBuilder {
+abstract class AbstractBuilder {
+
+	protected $loadFile;			//< Name of generated loadfile
+
+	/**
+	 * Standard constructor for autoloaded builder classes.
+	 * @param $className  Name of class to be build
+	 * @param $includeDir Bootstrap context include directory
+	 * @param $context    AppContext object to be used
+	 */
+	public abstract function __construct( $className, $includeDir, $context );
+
 	/**
 	 * Standard method for autoloaded builder classes.
-	 * @param $className name of class to be build
 	 * @returns the file name to be loaded by the autoloader
 	 */
-	public static function build( $className );
+	public function getLoadFile() {
+error_log( "Loading {$this->loadFile}" );
+		return $this->loadFile;
+	}
 }

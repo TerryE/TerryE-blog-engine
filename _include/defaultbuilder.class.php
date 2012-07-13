@@ -3,7 +3,7 @@
  * Default builder for autoload classes. See AbstractBuilder documentation for a detailed discussion
  * of the builder strategy.
  */
-class DefaultBuilder implements AbstractBuilder {
+class DefaultBuilder extends AbstractBuilder {
 	/**
 	 * Standard method for autoloaded builder classes.  
 	 *
@@ -18,25 +18,15 @@ class DefaultBuilder implements AbstractBuilder {
 	 *
 	 * The reason for this is that when testing and debugging, it is easier if any logged errors 
 	 * simply point to specific lines in the orginal source.
+	 *
+	 * @param $includeDir Bootstrap context include directory
+	 * @param $context    AppContext object to be used
 	 */
-	public static function build ( $className ) {
+	public function __construct( $className, $includeDir, $cxt ) {
 
 #error_log( "Building $className" );
-
-		$cxt			= AppContext::get();
 #error_log('APP context got' );
 		$fileName		= preg_replace( '/[^a-z]/', '.', strtolower( $className ) ) . '.class.php';		
-
-		foreach( $cxt->includeDir as $path ) {
-			if( file_exists( $path . $fileName ) ) {
-				$inFile	= $path . $fileName;
-				break;
-			}
-		}
-		if( !isset( $inFile) ) {
-			throw new Exception( "APP: class {$className} not found on include bollocks" );
-		}
-
 		$outFile		= $cxt->cacheDir . $fileName;
 		$debugLevel		= $cxt->debugLevel;
 #error_log("Debug level $debugLevel" );
@@ -45,21 +35,25 @@ class DefaultBuilder implements AbstractBuilder {
 
 #error_log("Ignore Compress $ignoreCompress" );
 
-		if( !$ignoreCompress ) {
+		if( $ignoreCompress ) {
+			foreach( $cxt->includeDir as $path ) {
+				if( file_exists( $path . $fileName ) ) {
+					$this->loadFile	= $path . $fileName;
+					return;
+				}
+			}
+			throw new Exception( "APP: class {$className} not found on include list" );
+		} else {
 #error_log( "Compressing $className" );
 			$ignoreRequires	= ( $debugLevel == 1 );
-			$source			= AppSourceUtils::compress(
-									file_get_contents( $inFile ),
-									$ignoreRequires );
+			$util = new AppSourceUtils;
+			$source	= $util->compress(	$fileName, 
+										array_merge ( (array) $cxt->cacheDir, $cxt->includeDir ),
+										$ignoreRequires );
 			if( $source	!= '' ) {
 				file_put_contents( $outFile, $source, LOCK_EX );
 			}
-#error_log( "Build returns $outFile" );
-			return $outFile;
-		} else {
-#error_log( "Build returns $inFile" );
-			return $inFile;
+			$this->loadFile = $outFile;
 		}
 	}
 }
-
