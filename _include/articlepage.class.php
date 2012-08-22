@@ -58,7 +58,7 @@ class ArticlePage extends Page {
 		$this->article['datetime'] = date( 'D jS F Y, g:i a', $this->article['date'] );
 
 		// If the user is an Admin then load the author utilities
-		$this->admin   = $cxt->isAdmin ? new AuthorArticle( $this, $this->cxt ) : NULL;
+		$this->admin   = $cxt->isAdmin ? new AuthorArticle( $cxt, $this ) : NULL;
 
 		// Flag an error if the request is for an invalid or hidden article
 		if( sizeof($this->article) == 0 || ( !$this->admin && $this->article['flag'] == 0 ) ) {
@@ -103,10 +103,12 @@ class ArticlePage extends Page {
 
 		// Process a returned login form if any (triggered by the existance of the login post variable).
 		$id  = $this->article['id'];
+		$cxt = $this->cxt;
+
 		if( $cxt->commentpost ) {
 
 			// AuthorArticle::processComment returns a properly formatted message return 
-			$aa = $this-admin ? $this-admin : new AuthorArticle( $this, $this->cxt );
+			$aa = $this->admin ? $this->admin : new AuthorArticle( $cxt, $this );
 			$commentStatus = $aa->processComment();
 			$this->cxt->setMessage( $commentStatus );
 
@@ -198,16 +200,16 @@ class ArticlePage extends Page {
 				 *    refresh meta otherwise the comments form is (re)displayed.
 				 */
 				$cxt->allow( ':author:code:comment:cookie:mailaddr*user*email' );
-				$aa = $this->admin ? $this->admin : new AuthorArticle( $this, $this->cxt );
+				$aa = $this->admin ? $this->admin : new AuthorArticle( $cxt, $this );
 				$aa->generateCommentForm();
 			}
 		}
 
 		if( $cxt->edit != 'enabled' ) {
 			/**
-			 * Note that articles can contain inter-article links of the format \<a href="article-N"\>???\</a\> 
-			 * So in the case where the article is being viewed (rather than edited), the ??? need 
-			 * to be replaced by the appropriate article titles if not in an admin edit mode.
+			 * Note that articles can contain inter-article links such as \<a href="article-N"\>???\</a\> 
+			 * So in the case where the article is being viewed (rather than edited), the ??? acts as a 
+			 * placeholder to be replaced by the appropriate article titles if not in an admin edit mode.
 			 */
 			$this->article['details'] = $this->replaceArticleNames( $this->article['details'] );
 		}

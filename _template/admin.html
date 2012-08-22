@@ -6,7 +6,7 @@
 		<p>{TR:<b>%s</b> has carried out the <b>%s</b> action on the following comment in:USER:COMMENT_ACTION} <a href="article-{ARTICLE[id]}">{ARTICLE[title]}</a>:</p>
 		{COMMENT[comments]}
 {ELSEIF:LOGGED_ON_ADMIN}
-		<p>{TR:You are logged on to your administrative account\:} <b>{LOGGED_ON_USER}&nbsp; <small>(<a href="admin-pwdchange">{TR:change password}</a>)</small></b></p>
+		<p>{TR:You are logged on to your administrative account\:} <b>{LOGGED_ON_USER}&nbsp;{// <small>(<a href="admin-pwdchange">change password</a>)</small>}</b></p>
 		<form id="postform" method="post" action="admin-form">
 		<table>
 			<tr> <th><label for="newtitle">{TR:New Article Title\:}</label></th>

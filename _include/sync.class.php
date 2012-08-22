@@ -3,6 +3,15 @@
  * Article synchronisation between remote (webfusion) server and locally served copy.
  */
 class Sync {
+	private $cxt;		//< Application context
+	/** 
+	 * Constructor   Save the context to a instance variable
+	 * @param $cxt   AppContext instance 
+     */
+	public function __construct( $cxt ) {
+		$this->cxt = $cxt;
+	}
+
 	/**
 	 * Client end which runs on machine running local system. 
 	 * @param $dateLastSynced DTS of the last sync operation.
@@ -12,9 +21,9 @@ class Sync {
 	 * The client will typically be a local VM or native LAMP stack running the
 	 * test/dev blog.  This will synch changes with the remote server.
 	 */
-	public static function client( $dateLastSynced, $remoteServer ) {
+	public function client( $dateLastSynced, $remoteServer ) {
 
-		$db = AppDB::get();
+		$db = $this->cxt->db;
 		$db->declareFunction( array(
 'getChangedArticles'	=> "Set=SELECT * FROM :articles WHERE date_edited>#1 ORDER BY id",
 'getArticlebyId'		=> "Row=SELECT * FROM :articles WHERE id=#1",
@@ -34,7 +43,7 @@ class Sync {
 				$report .= "Synching article $a[id]\n"; 
 			}
 			$articles = gzcompress ( serialize( $articles ), 9 );
-			$check = md5( AppContext::get()->salt . $articles );
+			$check = md5( $this->cxt->salt . $articles );
 			$date_next_synced = time();
 
 			$ch = curl_init();
@@ -70,7 +79,7 @@ class Sync {
 					} else {
 						$status == 'local inserted';
 					}
-					self::updateArticle( $inputArticle, $previousArticle );				
+					$this->updateArticle( $inputArticle, $previousArticle );				
 				}
 				$report .= sprintf( "%5.5u %s\n", $id, $status );
 			} 
@@ -90,9 +99,9 @@ class Sync {
 	 * It synchs the changes to the public instance.
 	 */
 
-	public static function server( $syncContent, $dateLastSynced, $dateNextSynced ) {
+	public function server( $syncContent, $dateLastSynced, $dateNextSynced ) {
 
-		$db=AppDB::get();
+		$db=$this->cxt->db;
 		$db->declareFunction( array(
 'getSelectedArticles'	=> "Set=SELECT * FROM :articles WHERE date_edited>#1 OR id in (#2) ORDER BY id",
 'createBlankSarticle'	=> "INSERT INTO :articles( id, details ) VALUES ( #1, '&nbsp;' )",
@@ -126,7 +135,7 @@ class Sync {
 					// The input article is more recent than article on D/B so update the D/B and report
 					$outputArticles[] = array( 
 						'id' => $id, 
-						'status' => self::updateArticle( $remoteArticle, $article ),
+						'status' => $this->updateArticle( $remoteArticle, $article ),
 						);
 				} else {
 
@@ -142,12 +151,14 @@ class Sync {
 		foreach( $remoteArticles as $article ) {
 			$id = $article['id'];
 			$db->createBlankSarticle( $id );
-			self::updateArticle( $inputArticle );
+			$this->updateArticle( $inputArticle );
 			$outputArticles[] = array( 'id' => $article['id'], 'status' => 'created' );
 		}
 
 		$db->updateLastSyncTime( $dateNextSynced );
-		AuthorArticle::get($this)->regenKeywords();
+
+		$aa = new AuthorArticle( $cxt );
+		$aa->regenKeywords();
 
 		return $outputArticles;
 	}
@@ -155,13 +166,13 @@ class Sync {
 	/**
 	 * Update an article in the database
 	 */
-	private static function updateArticle( 
+	private function updateArticle( 
 			$newArticle, 
 			$previousArticle = array( 'flag' 	=> 0,  'author'   => '', 'date_edited' => 0,   'date' => 0, 
 				                      'comments'=> '', 'keywords' => '', 'comment_count' => 0, 'encoding' => 'HTML', 
 			                          'title'	=> '', 'details'  => '', 'trim_length' => 0)
 			) {
-		$db = AppDB::get();
+		$db = $this->cxt->db;
 		$id = $newArticle['id'];
 		unset( $newArticle['id'] );		// we don't need to reset the primary key
 

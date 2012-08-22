@@ -112,7 +112,7 @@ class TemplateBuilder extends AbstractBuilder {
 	 * Initialise the compiler context.
 	 * @param $className  Name of class to be build
 	 * @param $includeDir Bootstrap context (not used in this builder)
-	 * @param $context    AppContext object to be used
+	 * @param $cxt        AppContext object to be used
 	 */
 	public function __construct( $className, $includeDir, $cxt ) {
 		$this->templateVars = array();

@@ -19,19 +19,20 @@ class AdminPage extends Page {
 
 		// Define AppDB access functions used in AdminPage
 		$this->db->declareFunction( array(
-'getUserDetails'	=> "Row=SELECT id, flag, name FROM :members WHERE email = '#1' AND password='#2' AND flag='2'",
-'insertNewArticle'	=> "INSERT INTO :articles (flag, author, date, date_edited, title, details, trim_length) " .
-					   "VALUES (0,'#1', #2, #3, '#4',' ',0)",
+'getUserDetails'	=> "Row=SELECT id, flag, name FROM :members 
+							WHERE email = '#1' AND password='#2' AND flag='2'",
+'insertNewArticle'	=> "INSERT INTO :articles (flag, author, date, date_edited, title, details, trim_length)
+					    VALUES (0,'#1', #2, #3, '#4',' ',0)",
 'getComment'		=> "Row=SELECT * FROM :comments WHERE id=#1 LIMIT 1",
 'getUserName'		=> "Val=SELECT name FROM :members WHERE MD5(CONCAT('#1',name,':','#2'))='#3' LIMIT 1",
 'getArticle'		=> "Row=SELECT * FROM :articles WHERE id = #1",
 'setCommentFlag'	=> "UPDATE :comments SET flag=1 WHERE id=#1 AND flag=0", 
 'deleteComment'		=> "DELETE FROM :comments WHERE id=#1 AND flag=0", 
-'updateCommentCnt'	=> "UPDATE :articles a 
-						SET    comment_count=(SELECT count(*) FROM :comments c WHERE c.article_id=a.id AND c.flag = 1) 
+'updateCommentCnt'	=> "UPDATE :articles a SET comment_count=
+						(SELECT count(*) FROM :comments c WHERE c.article_id=a.id AND c.flag = 1) 
 			         	WHERE  a.id=#1",
 'getConfig'			=> "Set=SELECT config_name AS name, config_value AS value FROM :config
-						WHERE LEFT(config_name,1)!='_'",
+							WHERE LEFT(config_name,1)!='_'",
 'updateConfigValue' => "UPDATE :config SET config_value='#2' WHERE config_name='#1'", 
 		) );
 
@@ -47,9 +48,10 @@ class AdminPage extends Page {
 
 			case 'logout':		$this->processLogout();			return; 
 			case 'comment':		$this->processComment();		break; 
-			case '':			                                break; 
+			case '':			                                break;
+		//  case 'pwdchange':   to do 
 
-			default:  new InvalidPage;	 
+			default:  new InvalidPage( $cxt );	 
 		}
 
 		// Finally drop through to display the admin page
@@ -96,7 +98,8 @@ class AdminPage extends Page {
 	}
 
 	/**
-     * Process the Create Article, Sync Articles, Purge Caches, Resync Sidebar and Update Config buttons on main form.
+     * Process the Create Article, Sync Articles, Purge Caches, Resync Sidebar and 
+	 * Update Config buttons on main form.
      */
 	private function processMainForm() {
 		$cxt = $this->cxt;
@@ -109,7 +112,7 @@ class AdminPage extends Page {
 
 		$cxt->allow(':create:newtitle:sync:purge:syncsidebar:update_config:Aconfig' );
 	
-		// Process a returned article create form if any (triggered by the existance of the create post variable).
+		// Process a returned article create form if the create post variable hqas been set
 		if( $cxt->create && $cxt->newtitle ) {
 			// The input title needs to be both HTML escaped
 			$title = htmlentities( $cxt->newtitle , ENT_NOQUOTES, 'UTF-8' );
@@ -124,9 +127,11 @@ class AdminPage extends Page {
 
 		// Process a remote sync request
 		} elseif( $cxt->sync ) {
+			$sync = new Sync( $cxt );
 			$cxt->setMessage( array( 
-				'report' => Sync::client( $cxt->dateLastSynced, $cxt->remoteServer ),
+				'report' => $sync->client( $cxt->dateLastSynced, $cxt->remoteServer ),
 				) );
+			unset( $sync );
 			$this->purgeHTMLcache();
 
 		// Process a purge cache request
@@ -147,7 +152,7 @@ class AdminPage extends Page {
 				$this->purgeHTMLcache();
 			}
 
-		// Process a returned config update form if any (triggered by the existance of the update_config post variable).
+		// Process a returned config update form if the update_config post variable has been set
 		} elseif( $cxt->update_config && $cxt->isAdmin ) {
 			$oldConfigs = $this->getConfig();
 			$newConfigs = is_array( $cxt->config ) ? $cxt->config : array();
@@ -232,8 +237,12 @@ class AdminPage extends Page {
 		$cxt->allow( ':check:Rsync_content:last_synced:next_synced' );
 		$syncContent = $cxt->sync_content;
 
+		//Any sync request is validated to ensure that the requesting site is trusted on the basis
+		//of a shared secret:  the configured salt; the check must be the MD5 of the salt plus content.
 		if( $cxt->check == md5( $cxt->salt . $syncContent ) ) {
-			$response = Sync::server( $cxt->sync_content, $cxt->last_synced, $cxt->next_synced );
+			$sync = new Sync( $cxt );
+			$response = $sync->server( $cxt->sync_content, $cxt->last_synced, $cxt->next_synced );
+			unset( $sync );
 			$this->purgeHTMLcache();
 
 		} else {

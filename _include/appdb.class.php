@@ -18,13 +18,16 @@ class AppDB extends mysqli {
 	/**
 	 * AppDB constructor. Connect to the database and initialise the list of tables with the given prefix.
 	 *
-	 * @param $dbContext  String literal containing MySQL connection information 'host:DB:user:password:tablePrefix' 
+	 * @param $dbContext  String literal containing MySQL connection information 'host:DB:user:password' 
+	 * @param $appPrefix  An application prefix, which is prefixed to all table names  
 	 * @param $logger     AppLogger instance
 	 */
-    public function __construct( $dbContext, $logger = NULL ) {
+    public function __construct( $dbContext, $appPrefix, $logger = NULL ) {
 
         parent::init();
-		list( $host, $db, $user, $passwd, $this->tablePrefix ) = explode ( ':', $dbContext );
+
+		list( $host, $db, $user, $passwd ) = explode ( ':', $dbContext );
+		$this->tablePrefix = $appPrefix;
 
         if( !parent::real_connect($host, $user, $passwd, $db)) {
             throw new Exception ('Connect Error (' . 

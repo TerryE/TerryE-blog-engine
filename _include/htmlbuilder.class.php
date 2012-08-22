@@ -6,16 +6,18 @@
  * HTML cleanup object, the cleanup function is implemented staticly.
  *
  * This class utilises a lot of data-driven code generated from the *_RULES constants, and so it is 
- * structured as a class builder. ( See AbstractBuilder documentation for a detailed discussion of the
- * builder strategy.)  It builds the target class, \b HtmlUtils, which embeds the generated code.
- * So this generator class is named HtmlBuilder under the builder conventions. This transforms itself
- * into the runtime version HtmlUtils, which is in the \b _cache directory, by 
- * -  adding the data-driven code 
+ * structured as a class builder. ( See the AbstractBuilder documentation for a detailed discussion 
+ * of the builder strategy.)  So this generator class is named HtmlBuilder under the builder conventions. 
+ * It transforms itself by adding the necessary (dynamic at build-time) code to builds the target run-time 
+ *  class,\b HtmlUtils in the \b _cache directory,  by 
+ * -  adding the data-driven code which implements the validaton rules.
  * -  dropping the transform-specific functions no longer required in the runtime version. 
  *
- * Previous versions used lambda-style functions generated on the fly.
+ * 
+ * Like all builder class, this is typicly run once per software release.  Subsequent web requests will
+ * load and use the built \b HtmlUtils from the cache directory.
  *
- *
+ * (Note that previous versions used lambda-style functions generated on the fly.)
  */
 class HtmlBuilder extends AbstractBuilder {
 
@@ -43,20 +45,19 @@ class HtmlBuilder extends AbstractBuilder {
 	 *
 	 * @param $className  Name of class to be build
 	 * @param $dummy      Bootstrap context include directory (not use in non-bootstrap builders)
-	 * @param $context    AppContext object to be used
+	 * @param $cxt        AppContext object to be used
 	 */
 	public function __construct( $className, $dummy, $cxt ) {
 		$this->cxt = $cxt;
 
-		// Pick up tail content which needs to included in class 
-		$thisSource		= file_get_contents( __FILE__ );
-		$inSource		= substr( $thisSource, strpos( $thisSource, "\n//+" ) );
-
+		//Use the appropriate article and comment rules to generate the corresponding tag functions.
 		$tagFunctions	= array();
 		foreach( array ( 'article' => self::ARTICLE_RULES,
 		                 'comment' => self::COMMENT_RULES ) as $type => $tagList ) {
+
 			//Now generate tag parse methods		
 			foreach( explode( ',', $tagList ) as $tag ) {
+
 				// calculate the prefix and tags dependent options
 				$attrs		= explode ( ':', $tag );
 				$tag		= array_shift( $attrs );
@@ -75,10 +76,12 @@ class HtmlBuilder extends AbstractBuilder {
 					//   $newTag = $endTag ? '</pre>' : "\n<pre>";
 					$code = '';
 					$tagCode = "\$endTag ? '$optTagEnd' : \"$optCR<$tag$noEndTag>\"";  
+
 				} else {
 					// The code will include a set of attribute filters such as 
 					//   if( isset( $attr['class'] ) ) $newTag .= " class=$attr[class]";
 					$attrCode = array();
+
 					foreach( $attrs as $a ) {
 						$attrCode [] = "if( isset( \$attr['$a'] ) ) \$newTag .= \" $a=\\\"\$attr[$a]\\\"\";";
 					}
@@ -87,6 +90,7 @@ class HtmlBuilder extends AbstractBuilder {
 							"else { \$newTag = \"$optCR<$tag\";\n" . 
 							implode ("\n", $attrCode) . "\n" .
 							"\$newTag .= '$noEndTag>';\n}";
+
 					$tagCode = '$newTag';
 				}
 
@@ -97,13 +101,17 @@ class HtmlBuilder extends AbstractBuilder {
 				$tagFunctions[] = "$protoCcode$code\n$returnCode";
 			}
 		}
-		$outSource	= '<?php
-class HtmlUtils {
-	private $cxt; 
-	public function __construct( $cxt ) { $this->cxt=$cxt; }
-' 					. implode( "\n", $tagFunctions ) . $inSource;
+
+		// Pick up tail content which needs to included in class 
+		$thisSource		= file_get_contents( __FILE__ );
+		$outTrailer		= substr( $thisSource, strpos( $thisSource, "\n//+" ) );
+		$outHeader		= "<?php\nclass HtmlUtils {\n\tprivate \$cxt;\n" .
+						  "\tpublic function __construct( \$cxt ) { \$this->cxt=\$cxt; }\n";
+
 		$this->loadFile	= $cxt->cacheDir . "html.utils.class.php";
-		file_put_contents( $this->loadFile, $outSource, LOCK_EX );
+
+		file_put_contents( $this->loadFile, 
+						   $outHeader . implode( "\n", $tagFunctions ) . $outTrailer, LOCK_EX );
 	}
 
 //+================ Properties and methods that are maintained in the runtime version =================
@@ -153,7 +161,8 @@ class HtmlUtils {
 				$attr		= array();
 
 				// Split the tag attributes section into separate attributes
-				if( preg_match_all ( '/ \s* (\w+) \s* = \s* ( \w+ | " [^"]* " ) /xs', $attribs, $matches, PREG_SET_ORDER ) ) {
+				if( preg_match_all ( '/ \s* (\w+) \s* = \s* ( \w+ | " [^"]* " ) /xs', 
+									 $attribs, $matches, PREG_SET_ORDER ) ) {
 					foreach( $matches as $m ) {
 						$attr[strtolower( $m[1] )] = ($m[2][0]=='"') ? substr( $m[2], 1, -1) : $m[2];
 					}
@@ -181,19 +190,24 @@ class HtmlUtils {
 				}
 				if( $content == '' ) continue;
 
-				// For content text outside PRE tags, compress whitespace and wrap to avoid line becomming too long.
+				// For content text outside PRE tags, compress whitespace and wrap to avoid line
+				// becomming too long.
 				if( !$this->inPreTag ) {
 					$content	= preg_replace( '![\s\r\n]+!', ' ', $content );
 					$lineTail	= ($lineLength < self::LINE_WRAP ) ? self::LINE_WRAP - $lineLength : 1;
 					$content	= preg_replace( "! (.{{$lineTail}} \S* )\s !x", "\$1\n", $content, 1 );
 					$content	= preg_replace( '! (.{' . self::LINE_WRAP . '} \S* )\s !x', "\$1\n", $content );
 					$posCR		= strrpos($content, "\n");
-					$lineLength	= ($posCR === false) ? strlen( $content ) + $lineLength : strlen( $content ) - $posCR;
+					$lineLength	= ($posCR === false) ? 
+									strlen( $content ) + $lineLength : 
+									strlen( $content ) - $posCR;
 				}
 				$newHTML[]	= $content; 
 			} else {
 				$posCR		= strrpos($segment, "\n");
-				$lineLength	= ($posCR === false) ? strlen( $segment ) + $lineLength : strlen( $segment ) - $posCR;
+				$lineLength	= ($posCR === false) ? 
+								strlen( $segment ) + $lineLength : 
+								strlen( $segment ) - $posCR;
 				$newHTML[]	= $segment;
 			}
 		}
@@ -243,19 +257,27 @@ class HtmlUtils {
 	}
 
 	/**
-	 * The span extension filters the attributes and only permits the color and underline attributes. Empty spans are removed. 
+	 * The span extension filters the attributes and only permits the color and underline attributes. 
+	 * Empty spans are removed. 
 	 */
 	private function spanExtn($endTag,$attrs,$newTag) {
 		if( $endTag ) {
 			return array_shift( $this->validSpanTag ) ? $newTag : ''; 
 		} else {
 			$newTag = isset( $attrs['class'] ) ? "class=\"$attrs[class]\"" : ""; 
-			if( preg_match_all( '/ \s* (\S+) \s* : \s* ([^;]+) /x', strtolower( $attrs['style'] ), $m, PREG_PATTERN_ORDER ) ) {
+			if( preg_match_all( '/ \s* (\S+) \s* : \s* ([^;]+) /x', 
+								strtolower( $attrs['style'] ), $m, PREG_PATTERN_ORDER ) ) {
 				$styles = array_combine ( $m[1], $m[2] );
 				$newStyle = '';
-				if( isset( $styles['color'] ) ) $newStyle .= "color : $styles[color];";
-				if( isset( $styles['text-decoration'] ) ) $newStyle .= "text-decoration : {$styles['text-decoration']};";
-		        if( $newStyle !== '' ) $newTag .= " style=\"$newStyle\""; 
+				if( isset( $styles['color'] ) ) {
+					$newStyle .= "color : $styles[color];";
+				}
+				if( isset( $styles['text-decoration'] ) ) {
+					$newStyle .= "text-decoration : {$styles['text-decoration']};";
+				}
+		        if( $newStyle !== '' ) {
+					$newTag .= " style=\"$newStyle\""; 
+				}
 			}
 			$valid = ( $newTag !== '' );
 			array_unshift( $this->validSpanTag, $valid );
@@ -288,7 +310,8 @@ class HtmlUtils {
 	} 
 
 	/**
-	 * The pre extension sets a global inPreTag flag.  (When this is false, whitespace within content is collapsed)
+	 * The pre extension sets a global inPreTag flag.  
+	 * When this flag is false, whitespace within content is collapsed.
 	 */
 	private function preExtn($endTag,$attrs,$newTag) {
 		$this->inPreTag = !$endTag; 

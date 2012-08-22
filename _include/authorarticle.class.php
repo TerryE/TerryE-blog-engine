@@ -15,12 +15,11 @@ class AuthorArticle {
 	/**
 	 * AuthorArticle constructor. Carry out processing to enable create and update functions on an article.
 	 *
-	 * @param $page    Article Page object which is requesting CU functions on article
 	 * @param $cxt     AppContext instance
+	 * @param $page    Article Page object which is requesting CU functions on article
 	 */
-	public function __construct( $page, $cxt ) {
+	public function __construct( $cxt, $page=NULL ) {
 
-		$this->page		= $page;
 		$this->cxt		= $cxt;
 		$this->db		= $cxt->db;
 		$this->isAdmin	= $cxt->isAdmin;
@@ -39,8 +38,15 @@ class AuthorArticle {
 					    WHERE  a.id=#1",
 			) );
 
-		// set up property synonyms for the article fields
-		foreach( array_keys( $page->article ) as $field ) $this->$field =& $page->article[$field]; 	
+		// Set up property synonyms for the article fields from the referenced page if set
+		if( is_object( $page ) ) {
+			$this->page	= $page;
+			foreach( array_keys( $page->article ) as $field ) {
+				$this->$field =& $page->article[$field];
+			}
+		} else {
+			$this->page = FALSE;
+		}		
 	}
 	
 	/**  
@@ -61,7 +67,7 @@ class AuthorArticle {
 	 */  
 	public function fileCheckArticle() {
 
-		if( !$this->isAdmin ) return FALSE;
+		if( !($this->isAdmin) && !($this->page) ) return FALSE;
 
 		$md5       =  md5( $this->cxt->salt . 'article' .  $this->id );
 		$adminDir  = $this->cxt->adminDir;
@@ -107,7 +113,7 @@ class AuthorArticle {
 	 */
 	private function createArticleFileCopy( $fileName ) {
 
-		if( !$this->isAdmin ) return FALSE;
+		if( !($this->isAdmin) || !($this->page) ) return FALSE;
 
 		// Assign context for article-html template
 		$this->page->assign( array(
@@ -144,7 +150,7 @@ class AuthorArticle {
 	 */
 	private function updateArticleFromFile( $fileName,  $fileTime ){
 
-		if( !$this->isAdmin ) return FALSE;
+		if( !($this->isAdmin) || !($this->page) ) return FALSE;
 
 		$newHTML = file_get_contents( $fileName );
 
@@ -205,39 +211,6 @@ class AuthorArticle {
 	}
 
 	/**
-	 *  Regenerate keyword summaries in the Config table.
-	 *  This function is called whenever the keywords for an article have changes.  The list of unique 
-	 *  keywords and their counts is cached in the preudo-static config variable keywords and this needs to
-	 *  be regenerated whenever such a change has been made.  I want to avoid doing this every page to
-	 *  generate the side-bar, but a simple complete regen per article change is adequate here. 
-	 */
-	public function regenKeywords() {
-		$count = array();
-		$maxCount = 0;
-		foreach( $this->db->getAllKeyords() as $article ) {
-			foreach( preg_split("/[\s,:]+/", $article['keywords'] ) as $keyword ) {
-				if( $keyword == '' ) continue; 
-				@$count[$keyword]++;
-				if( $count[$keyword] > $maxCount ) {
-					$maxCount = $count[$keyword];
-				}
-			}
-		}
-
-		foreach( $count as $keyword => &$keyCount ) {
-			$keyCount = 75 + round ( 125 * $keyCount / $maxCount, -1 ); # map 0..$maxKeyCount onto 75..200
-		}
-	 
-		uksort( $count, 'strcasecmp' ); # do a case insensitive key sort
-
-		$newKeywordList = serialize( $count );
-		if( $this->cxt->keywords != $newKeywordList ) {
-			$this->db->updateKeywordList( $newKeywordList );
-		}
-		return ( $this->cxt->keywords != $newKeywordList );
-	}
-
-	/**
 	 * Admin processing on edit of article.
 	 * If the logged on user is an author who has requested an inline edit then the normal processing path  
 	 * is bypassed and the article content is processed using the tiny MCE editor.  The idea here is that 
@@ -247,7 +220,7 @@ class AuthorArticle {
 	 */
 	public function editArticle() {
 
-		if( !$this->isAdmin ) return FALSE;
+		if( !($this->isAdmin) || !($this->page) ) return FALSE;
 
 		$content = "<table>".
 			"<tr><td><b>Title</b>:</td><td>{$this->title}</td></tr>\n" .
@@ -279,7 +252,7 @@ class AuthorArticle {
 	 */
 	public function submittedArticle() {
 
-		if( !$this->isAdmin ) return FALSE;
+		if( !($this->isAdmin) || !($this->page) ) return FALSE;
 
 		if( $this->cxt->article_content ){
 			$oldKeywords = $this->keywords;
@@ -331,6 +304,7 @@ class AuthorArticle {
 	 */
 	public function generateCommentForm() {
 
+		if( !($this->page) ) return FALSE;
 		$cxt     = $this->cxt;
 		$timeNow = time();
 
@@ -426,6 +400,8 @@ class AuthorArticle {
 	 */
 	public function processComment() {
 
+		if( !($this->page) ) return FALSE;
+
 		$cxt = $this->cxt;
 		$cxt->allow( ':author:code:cookie:mailaddr:comment:token:time:article_id:article_content' );
 
@@ -483,7 +459,9 @@ class AuthorArticle {
         * also overloaded === FALSE if the comment can't be successfully cleaned up and later === TRUE
 		* if the comment has been posted so will not require redisplay.  
 		*/
-		$comment = HtmlUtils::cleanupHTML( html_entity_decode($cxt->comment), HtmlUtils::COMMENT );
+		$utils = new HtmlUtils( $cxt );
+		$comment = $utils->cleanupHTML( html_entity_decode($cxt->comment), HtmlUtils::COMMENT );
+		unset( $commment );
 
 		if( substr( $comment, 0, 7 ) == '<error>') {
 			$info[] = substr( $comment, 7 );
@@ -539,8 +517,8 @@ class AuthorArticle {
 					"Subject: $mailSubject",
 					) );
 
-/*TESTING*/debugVar( 'mailHeaders', $mailHeaders );
-/*TESTING*/debugVar( 'mailMsg', $mailMsg );
+/*TESTING*/$this->page->debugVar( 'mailHeaders', $mailHeaders );
+/*TESTING*/$this->page->debugVar( 'mailMsg', $mailMsg );
 /*TESTING*/#	mail( $mailaddr, $mailSubject, $mailMsg, $mailHeaders );
 				$info[] =	$cxt->getTranslation( 'Comment registered.  It will be displayed after email confirmation' );
 			}
@@ -550,5 +528,37 @@ class AuthorArticle {
 				);
 		}
 		return $resp;
+	}
+	/**
+	 *  Regenerate keyword summaries in the Config table.
+	 *  This function is called whenever the keywords for an article have changes.  The list of unique 
+	 *  keywords and their counts is cached in the preudo-static config variable keywords and this needs to
+	 *  be regenerated whenever such a change has been made.  I want to avoid doing this every page to
+	 *  generate the side-bar, but a simple complete regen per article change is adequate here. 
+	 */
+	public function regenKeywords() {
+		$count = array();
+		$maxCount = 0;
+		foreach( $this->db->getAllKeyords() as $article ) {
+			foreach( preg_split("/[\s,:]+/", $article['keywords'] ) as $keyword ) {
+				if( $keyword == '' ) continue; 
+				@$count[$keyword]++;
+				if( $count[$keyword] > $maxCount ) {
+					$maxCount = $count[$keyword];
+				}
+			}
+		}
+
+		foreach( $count as $keyword => &$keyCount ) {
+			$keyCount = 75 + round ( 125 * $keyCount / $maxCount, -1 ); # map 0..$maxKeyCount onto 75..200
+		}
+	 
+		uksort( $count, 'strcasecmp' ); # do a case insensitive key sort
+
+		$newKeywordList = serialize( $count );
+		if( $this->cxt->keywords != $newKeywordList ) {
+			$this->db->updateKeywordList( $newKeywordList );
+		}
+		return ( $this->cxt->keywords != $newKeywordList );
 	}
 }

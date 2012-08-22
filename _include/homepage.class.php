@@ -37,10 +37,6 @@ class HomePage extends Page {
 		$cacheName = ( $cxt->user == '' && $cxt->requestCount == 1 ) ? "index" : NULL;
 
 		$this->assign( 'main_articles', $articles );
-	/* Need to think about Etags
-		header( 'Etag: "' . md5( $output ) . '"' );
-		header( "Cache-Control: max-age=60" );
-	*/
 		$this->output( 'index' );
 	}
 }

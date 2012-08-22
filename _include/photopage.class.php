@@ -179,8 +179,8 @@ class PhotoPage extends Page {
 				$album = $photo['album_id'];
 				$db->deletePhoto( $photo['id'] );
 
-				@unlink( "$rootDir/images/photos/thumbnail/$id.jpg" );
-				@unlink( "$rootDir/images/photos/full/$id.jpg" );
+				@unlink( "{$rootDir}images/photos/thumbnail/$id.jpg" );
+				@unlink( "{$rootDir}images/photos/full/$id.jpg" );
 
 				$db->updatePhotoCnt( $album );
 
@@ -238,7 +238,7 @@ class PhotoPage extends Page {
 	function processImage( $fileInfo, $album, $id ) {
 
 		$filetype = $fileInfo['type'];
-		$imagePath = $this->cxt->rootDir . "/images/photos";
+		$imagePath = "{$this->cxt->rootDir}images/photos";
 
 		if( in_array( $filetype, array( 'image/png', 'image/jpeg' ) ) ) {
 			$imageType = $filetype == 'image/jpeg' ? 'jpeg' : 'png' ;

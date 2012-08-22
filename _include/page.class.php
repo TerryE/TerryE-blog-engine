@@ -1,11 +1,12 @@
 <?php
 /**
  * Base class for all web page handling. In this architecture, all web requests of the form 
- * http://{sitename}/action?{parameters} are written as http://{sitename}/index.php?page=action&{parameters}. 
- * The common entrypoint \b index.php trims the action to the leading word part and invokes the class 
- * constructor for {<i>action</i>}Page to action this request.  All {<i>action</i>}Page classes extend
- * this Page class which collects the common methods and properties for webpage handling.  The presentation
- * data, db and context object instances are all maintained as protected methods.
+ * http://{sitename}/action?{parameters} are written as 
+ * http://{sitename}/index.php?page=action&{parameters}.  The common entrypoint \b index.php trims 
+ * the action to the leading word part and invokes the class constructor for {<i>action</i>}Page 
+ * to action this request.  All {<i>action</i>}Page classes extend this Page class which collects 
+ * the common methods and properties for webpage handling.  The presentation data, db and context 
+ * object instances are all maintained as protected methods.
  *
  * A special set of attributes are maintained in the $data stdClass property.  These are used
  * to pass page content to the appropriate page rendering template, and initialised through the
@@ -22,7 +23,8 @@ class Page {
 	protected $contentType;		//< default content type header to be issued on page output
 
 	/**
-	 * Page constructor.  This is called by any page class which extends Page to set up command attributes 
+	 * Page constructor.  This is called by any page class which extends Page to set up 
+	 * command attributes 
 	 * @param $cxt   AppContext instance
 	 */
 	public function __construct( $cxt ) {
@@ -34,7 +36,8 @@ class Page {
 		$this->contentType	= "text/html; charset=UTF-8";
 
 		$this->db->declareFunction( array(
-'getPhotoList'		=> "Set=SELECT id, title, filename FROM :photos WHERE flag='1' ORDER BY id DESC LIMIT #1",
+'getPhotoList'		=> "Set=SELECT id, title, filename FROM :photos 
+							WHERE flag='1' ORDER BY id DESC LIMIT #1",
 'getArticleList'	=> "Set=SELECT id, title FROM :articles WHERE flag='1' ORDER BY date DESC LIMIT #1",
 'getTitlebyIDs'		=> "Set=SELECT id, title FROM :articles WHERE id IN (#1) AND flag='1'"
 		) );
@@ -53,7 +56,8 @@ class Page {
 	}
 
 	/**
-	 * Assign a page variable. This can be a single key and value pair, or an associate array of key=>value pairs
+	 * Assign a page variable. This can be a single key and value pair, or an associate array of 
+	 *key=>value pairs
 	 * @param $key the page variable name or array of names
 	 * @param $value optional value if $key is scalar
 	 */
@@ -83,9 +87,13 @@ class Page {
 	public function push() {
 		$argList = func_get_args();
 		$key = array_shift( $argList );
-		if( !property_exists( $this->data, $key ) ) $this->data->$key = array();  # Create it if it doesn't already exist
+		if( !property_exists( $this->data, $key ) ) {
+			$this->data->$key = array();                    // Create it if it doesn't already exist
+		}
 		$dataElt =& $this->data->$key;
-		foreach( $argList as $value ) $dataElt[] = $value;  // And the remainder the values to be pushed
+		foreach( $argList as $value ) {
+			$dataElt[] = $value;
+		}  // And the remainder the values to be pushed
 	}
 	/**
 	 * Clear down all data items
@@ -168,17 +176,21 @@ class Page {
 		$this->assign( array (
 			'logged_on_user' 	=> $cxt->user,
 			'logged_on_admin' 	=> $cxt->isAdmin,
-			'blog_name' 		=> $cxt->title,					# This may be overriden by the page code 
+			'blog_name' 		=> $cxt->title,			# This may be overriden by the page code 
 			'title'				=> $cxt->title,	
 			'theme'				=> $cxt->skin,
-			'forum_enabled' 	=> false,						# Force to be false for now
+			'forum_enabled' 	=> false,				# Force to be false for now
 			'function'			=> $function,
 			'enable_sidebar' 	=> ($cxt->sidebar > 0 ),
 			'logged_in'			=> isset( $_SESSION['blogemail'] ),
 			'header_scripts'	=> array (),
 			'side_keywords' 	=> $cxt->keywordList,
-			'side_articles' 	=> $cxt->sidebar > 0 ? $this->db->getArticleList( $cxt->sidebar ) : array (),
-			'side_photos'		=> $cxt->photos  > 0 ? $this->db->getPhotoList( $cxt->photos ) : array (),
+			'side_articles' 	=> $cxt->sidebar > 0 ? 
+										$this->db->getArticleList( $cxt->sidebar ) : 
+										array (),
+			'side_photos'		=> $cxt->photos  > 0 ? 
+										$this->db->getPhotoList( $cxt->photos ) : 
+										array (),
 			'side_custom'		=> $cxt->_sidebarCustom,
 		) ); 
 	}
@@ -216,8 +228,9 @@ class Page {
 			foreach( $this->db->getTitlebyIDs( $matched_ids ) as $row ) {
 				$this->titleById[$row['id']] = $row['title'];
 			}
-			# Now replace these patterns in the article.  Using preg_replace_callback is the fastest way to do this
 
+			// Now replace these patterns in the article.  Using preg_replace_callback is 
+			// the fastest way to do this
 			$content = preg_replace_callback( 
 					self::ARTICLE_MATCH_PATTERN, 
 					array( &$this, 'replaceArticleCallback'),
@@ -286,6 +299,7 @@ class Page {
 	/**
 	 * Issue Location header to force refresh on (new) page.  
 	 * @param $newLocation    Relative location to go to.
+	 * @param $anchor         Optional anchor field.
 	 */
 	public function setLocation( $newLocation, $anchor='' ) {
 		/**

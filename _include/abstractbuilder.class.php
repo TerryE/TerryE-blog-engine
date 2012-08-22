@@ -1,51 +1,49 @@
 <?php
 /**
  * Abstract class for autoload builder classes.
- * With the expection of the few functions in functions.php which don't sensibly fit into the class
- * framework, all material functionality is implemented though classes.  The standard PHP 5 autoload
+ * All material functionality in this application is implemented though classes.  The PHP 5 autoload
  * feature is used to implement class loading.  The version PHP 5 scripting engine uses this feature
- * resolve any references to an as yet unknown class by calling the function \b __autoload() with 
- * the desired classname as its argument. 
+ * resolve any references to an as yet unknown class by calling the function \b Dispatcher::autoload() 
+ * with the desired classname as its argument. 
  * 
  * By default, the autoloader loads normal classes from the \b _cache directory.  However if a cache
  * miss occurs — that is the class isn't in the \b _cache directory — then the autoloader employs a 
- *\a builder \a class to create this cached copy.  
+ * \a builder \a class based on a class naming convention to create this cached copy.  
 
- * This AbstractBuilder class is the abstraction class for all such builders, and here I describe
- * the philosophy and the overall strategy for this approach.
+ * This AbstractBuilder class is the abstraction class for all such builders, so I describe the 
+ * philosophy and the overall strategy for this approach.
  *
- * -  All builder classes have a name of the form \b Xxxx_builder (where \a Xxxx is a title-case word 
- *    that is the builder name). All builder classes are loaded directly from the \b _include directory
- *    using the corresponding filename pattern: <b><em>xxxx</em>.builder.class.php</b>. Using this
- *    directory avoids recursive issues of building builders, and this isn't a material performance 
+ * -  All builder classes have a name of the form \b XxxxBuilder (where \a Xxxx is a title-case word 
+ *    that is the builder name).  All builder classes are loaded directly from the \b include directory
+ *    using the corresponding filename pattern: <b><em>xxxx</em>builder.class.php</b>. Using the include
+ *    directory avoids recursive issues of building builders; this isn't a material performance overhead
  *    as building is a rare activity.
  *
- * -  The builder name is based on a simple convention for the class name: if DEFAULT_BUILDER_PATTERN
- *    is defined and the class name matches this pattern then the <em>default</em> builder class is 
- *    used.  If the class name is multiple words (that is separated by underscore or casechange) then 
- *    the first word in the class name is used as the builder name otherwise the <em>default</em>
- *    builder class is used.  
+ * -  The builder name is based on a simple convention for the class name: if the class name matches
+ *    a preset DEFAULT_BUILDER_PATTERN, then the DefaultBuilder class is used.  If the class name is
+ *    multi-word (that is separated by underscore or casechange) then the first word in the class name 
+ *    is used as the builder name, otherwise the DefaultBuilder class is used.
  *
- * -  A standard static method #build($className) is called within the selected builder, the job of 
- *    this \b build method is to construct the required cache copy to be used for this and future class
- *    loads.  The actual approach and strategy for the build itself is left entirely to the builder
- *    class, and hence \b __autoload() code itself is very straightforward.
+ * -  By instantiating the selected builder, its constructor __construct() is called to construct the 
+ *    required cache copy to be used for this and future class loads.  As the actual approach and 
+ *    strategy for the build itself is left entirely to the builder class, the \b autoload code itself   
+ *    is very straightforward.
  * 
- * This approach might seem to be rather convolved on first consideration, but it proves to be 
- * extremely flexible, effective and efficient:
+ * This approach might seem to be rather convolved, but it has proven itself to be extremely flexible,
+ * effective and efficient:
  *
  * -  The builder is typically called once per S/W-release per object to create the \b _cache copy. 
  *    Processing carried out in the builder is therefore hoisted out of the per request or per function 
  *    call runtime overhead entirely.  
  *
- * -  Having the builder phase also effectively removes the need to use PHP runtime \b eval() and  
- *    \b create_function() constructs.  Using these can incur a high runtime penalty if the application
- *    programmer is not aware of the consequences, and they can also create exploitable vulnerabilities 
- *    in applications,  so some shared service environments use <tt>disable_functions = 
- *    eval,create_function</tt> in the PHP ini configuration.
+ * -  Having the builder phase also removes the need to use PHP runtime \b eval() and \b create_function() 
+ *    constructs.  Using these can incur a high runtime penalty if the application programmer is not 
+ *    aware of the consequences, and they can also create exploitable vulnerabilities  in applications, so 
+ *    some shared service environments use <tt>disable_functions = eval,create_function</tt> in the PHP 
+ *    ini configuration.
  *
- * -  This also facilitates a safe model for dymanic code generation used by most output templates and 
- *    for use of configuration data driven code generation.  Moreover, as the "dynamic" output is written
+ * -  This also enables a safe model for dymanic code generation used by most output templates and for 
+ *    use of configuration data driven code generation.  Moreover, as the "dynamic" output is written
  *    to a file in the cache directory, this generated code is immediately and perminently available to 
  *    the programmer for debugging, in a way that code in embedded string variables is not.
  *
@@ -53,8 +51,8 @@
  *    file units without incuring the material runtime burdon on most shared hosting services (which
  *    don't employ PHP opcode caches and therefore have to recompile the relevant application portions
  *    for each request. (See my blog article <a href="http://blog.ellisons.org.uk/article-44"> 
- *    More on optimising PHP applications in a Webfusion shared service</a> for 
- *    further discussion of this and the associated 
+ *    More on optimising PHP applications in a Webfusion shared service</a> for further discussion of 
+ *    this and the associated 
  *    <a href="http://blog.ellisons.org.uk/search-Performance">Performance</a> articles.)
  *
  * Examples of where such loaders are employed in this blog application include:
@@ -73,7 +71,7 @@
  *    version is implemented in javascript and makes heavy use of dynamically generated enclosures. 
  *    This approach works well in javascript, but does not map efficiently onto a server-based PHP  
  *    environment.  Hence the HtmlBuilder generates any require data driven codethe by parsing the 
- *    configuration and morphs itself into an \b HTML_utilities class stored in \b _cache. 
+ *    configuration and morphs itself into an \b HtmlUtils class stored in \b _cache. 
  *
  * -  DefaultBuilder.  The default builder maps the source content from the corresponding \b _include
  *    file.  It makes no changes at the PHP generated bytecode level.  However, it optionally strips

@@ -1,8 +1,8 @@
 <?php
 /**
  * This class provides the blog/user/page context for the application.  The \a context is the
- * (quasi) static configuration within which this particular web request must execute, and this 
- * context is derived from three components:
+ * configuration within which this particular web request must execute, and this context is derived 
+ * from three components:
  *
  *  -  A number of configuration parameters are maintained in the database \b config table, which 
  *     contains a set of name / value pairs.
@@ -14,15 +14,18 @@
  *
  *  -  Some derived parameters based on user-specific cookies which permit persistent user logon, etc..   
  *
- * The class uses a standard single class object pattern, so a single object instance is created on 
- * demand by the static method get.  
+ * The input state to any request is therefore determined by this context and the database (which
+ * has it's own separate abstraction layer, though for ease of reference the DB object is maintained 
+ * in the \b db property. 
  *
  * A key design objective in developing this class was to make referencing such context parameters  
  * simple to code and robust, so all context parameters are referenced as properties to this object, 
  * with read access implemented by overloading using the __get() method. This also handles returns
  * a sensible default so instead of the application code having to guard any context access with 
  * a predicate <tt><b>isset()</b></tt> function call, the application logic can simply refer to 
- * <tt>$cxt->email</tt> or whatever. This will always default to a value ( <tt>=== FALSE</tt> if unset ). 
+ * <tt>$cxt->email</tt> or whatever. This will always default to a value ( <tt>=== FALSE</tt> if unset ).
+ * Such overloading of read access also prevents casual or accidental writing to the context by the
+ * application.  This is done rarely and explicitly using the set() method.
  *
  * Another issue which the context now addresses is support for output messaging when implementing a
  * <a href="http://en.wikipedia.org/wiki/Post/Redirect/Get" >Post/Redirect/Get</a> template.  All 
@@ -32,6 +35,9 @@
  * introducing the general overhead of PHP session management for this occasional use, so a message
  * table is used and the context identity ("\b cid") is used.  If the post has cookies set then this
  * is passed by cookie, and if not by a request parameter.  See setMessage() for further details.
+ *
+ * The class uses a standard single class object pattern, so a single object instance is created on 
+ * demand by the static method get. 
  */
 
 class AppContext {
@@ -41,21 +47,23 @@ class AppContext {
 
 	/*
 	 * Load the blog context
-	 * @param $bootstrapContext  A 6 parameter context defined and documented in \ref index.php. 
+	 * @param $bootstrapContext  A 7 parameter context defined and documented in \ref index.php. 
 	 */
 	public function __construct( $bootstrapContext ) {
 
-		//  Instantiate the  AppLogger, AppDB and stdClass container for publicly readable context properties 
+		//  Instantiate the  AppLogger, AppDB and stdClass container for publicly readable 
+		// context properties
 		$log	= new AppLogger( 
 					"$_SERVER[REQUEST_METHOD]\t$_SERVER[REQUEST_URI]\t$_SERVER[HTTP_USER_AGENT]",
 					$bootstrapContext['START_TIME']
 					);
-		$db		= new AppDB( $bootstrapContext['DB_CONTEXT'], $log );   
+		$db		= new AppDB( $bootstrapContext['DB_CONTEXT'],  $bootstrapContext['APP_PREFIX'], $log );   
 		$a		= new stdClass;
 
 		$a->db				= $db;
 		$a->log				= $log;
-		$a->rootDir			= $bootstrapContext['ROOT_DIR'];
+		$a->appPrefix		= $bootstrapContext['APP_PREFIX'];
+		$a->rootDir			= $bootstrapContext['ROOT_DIR'] . DIRECTORY_SEPARATOR;
 
 		$this->attrib		= $a;
 		$this->attribType	= array();
@@ -63,7 +71,8 @@ class AppContext {
 		// Define access functions used in context processing
 		$db->declareFunction( array(
 'getConfig'			=> "Set=SELECT * FROM :config",
-'checkPassword'		=> "Row=SELECT MD5(CONCAT('#1',password)) AS token, flag, email FROM :members WHERE name = '#2'",
+'checkPassword'		=> "Row=SELECT MD5(CONCAT('#1',password)) AS token, flag, email 
+						    FROM   :members WHERE name = '#2'",
 'insertMessage'		=> "INSERT INTO :messages (message, time) VALUES ('#1', UNIX_TIMESTAMP(NOW()))", 
 'getMessage' 		=> "Val=SELECT message FROM :messages WHERE id='#1'",
 'pruneMessages' 	=> "DELETE FROM :messages WHERE time<(UNIX_TIMESTAMP(NOW())-#1)",
@@ -77,27 +86,27 @@ class AppContext {
 			$a->$param	= $row['config_value'];
 		}
 
-		// For the std dirs, prefix with the rootDir and add trailing /.  Note that in the case of the
-		// includes and cache directories, these entries are option and will default to INC_DIR and CACHE_DIR
-		$a->HTMLcacheDir = $a->rootDir . DIRECTORY_SEPARATOR . $a->HTMLcacheDir . DIRECTORY_SEPARATOR;
-		$a->adminDir	 = $a->rootDir . DIRECTORY_SEPARATOR . $a->adminDir . DIRECTORY_SEPARATOR;
-		$a->templateDir	 = $a->rootDir . DIRECTORY_SEPARATOR . $a->templateDir . DIRECTORY_SEPARATOR;
+		// For the std dirs, prefix with the rootDir and add trailing separator.  Note that in the 
+		// case of the includes and cache directories, these entries are option and will default
+		// to INC_DIR and CACHE_DIR
+		$a->HTMLcacheDir = $a->rootDir . $a->HTMLcacheDir .  DIRECTORY_SEPARATOR;
+		$a->adminDir	 = $a->rootDir . $a->adminDir .      DIRECTORY_SEPARATOR;
+		$a->templateDir	 = $a->rootDir . $a->templateDir  .  DIRECTORY_SEPARATOR;
 		$a->cacheDir	 = isset( $a->cacheDir ) ? 
-							$a->rootDir . DIRECTORY_SEPARATOR . $a->cacheDir . DIRECTORY_SEPARATOR :
+							$a->rootDir . $a->cacheDir .     DIRECTORY_SEPARATOR :
 							$bootstrapContext['CACHE_DIR'] . DIRECTORY_SEPARATOR;
 
+		// If set, the includeDir is a searchlist so unpack to array, again each with rootDir 
+		// prefix and trailing /, otherwise it defaults to the bootstrap value/
+
 		if( isset( $a->includeDir ) ) {
-			// includeDir is a searchlist so unpack to array, again each with rootDir prefix and trailing / 
 			foreach ( explode( ';', $a->includeDir ) as $d) {
-				$includes[]	= $a->rootDir . DIRECTORY_SEPARATOR . $d . DIRECTORY_SEPARATOR;
+				$includes[]	= $a->rootDir . $d . DIRECTORY_SEPARATOR;
 			}
 			$a->includeDir  = $includes; 
 		} else {
-			$a->includeDir  = $bootstrapContext['INC_DIR'] . DIRECTORY_SEPARATOR; 
+			$a->includeDir  = array( $bootstrapContext['INC_DIR'] . DIRECTORY_SEPARATOR ); 
 		}
-
-		$a->keywordList	= unserialize( $a->_keywords ); 
-		$a->pid			= getmypid();
 
 		// The config variable debugParam defines the name of the GET debug switch.  This is 
 		// configurable because setting this GET parameter will force the page into debug
@@ -116,10 +125,11 @@ class AppContext {
 			$log->setLog( $a->debugFile );
 		}
 
-		// Check if the user is logged on.  This is determined from the user and token cookies. So
-		// cookies must be enables to log on.  If successful then the users email address is added 
-		// to the context
-
+		// Check if the user is logged on.  If logged on then the user-browser will return two
+		// cookies: the user and token cookies.  The user cookie records the logged on user and
+		// the token is a salted hash of the user's password to ensure that the logged-on user
+		// isn't a spoof attack.  So cookies must be enables to log on.  If successful then the 
+		// users email address is also added to the context.
 		$check = ( $a->user && $a->token ) ? 
 			$db->checkPassword( $a->salt, $a->user ) : 
 			array();
@@ -141,6 +151,9 @@ class AppContext {
 
 		// If the query has a "cid" get parameter, then use this to retrieve the associated message
 		$a->message     = $this->getMessage();
+
+		$a->keywordList	= unserialize( $a->_keywords ); 
+		$a->pid			= getmypid();
 
 		// Decode the requested page. Note that hyphenation is embed arguments.  
 		// So the URI for Article 1 is "article-1" etc.
@@ -206,7 +219,8 @@ class AppContext {
 
 				case '*':
 				case 'C':
-					if ( isset( $_COOKIE['blog_' . $name] ) ) $result = $_COOKIE['blog_' . $name];
+					$cookieName = $a->appPrefix . $name; 
+					if ( isset( $_COOKIE[$cookieName] ) ) $result = $_COOKIE[$cookieName];
 					$this->attribType[ $name ] = 'C';
 					break;
 
@@ -270,7 +284,8 @@ class AppContext {
 
 		if ( isset( $this->attribType[$name] ) && 
 		     $this->attribType[$name] == 'C' ) {
-			$status = setcookie( "blog_$name", $value, time() + 3600*24*94, '/', $_SERVER['HTTP_HOST'] );
+			$cookieName = $this->attrib->appPrefix . $name;
+			$status = setcookie( $cookieName, $value, time() + 3600*24*94, '/', $_SERVER['HTTP_HOST'] );
 		}
 
 		$this->attrib->$name = $value;
@@ -285,8 +300,9 @@ class AppContext {
 
     public function clear( $name ) {
 
-		if( isset( $_COOKIE["blog_$name"] ) ) {
-			setcookie( 'blog_' . $name,  '', 0, '/', $_SERVER['HTTP_HOST'] );
+		$cookieName = $this->attrib->appPrefix . $name;
+		if( isset( $_COOKIE[$cookieName] ) ) {
+			setcookie( $cookieName,  '', 0, '/', $_SERVER['HTTP_HOST'] );
 		}
 		unset( $this->attrib->$name );
 	}
@@ -327,9 +343,10 @@ class AppContext {
     private function getMessage() {
 
 		$msg = '';
-		if( isset( $_GET['cid'] ) || isset( $_COOKIE['blog_cid'] ) ) {
+		$cidCookie = $this->attrib->appPrefix . 'cid';
+		if( isset( $_GET['cid'] ) || isset( $_COOKIE[$cidCookie] ) ) {
 
-			$cid = isset( $_GET['cid'] ) ? $_GET['cid'] : $_COOKIE['blog_cid'];
+			$cid = isset( $_GET['cid'] ) ? $_GET['cid'] : $_COOKIE[$cidCookie];
 			$chk = substr( $cid, 0, 3 );
 			$id  = substr( $cid, 3 );
 
@@ -369,7 +386,7 @@ class AppContext {
 
 		if( $translation == NULL ) {
 			$this->db->insertTranslation( $id, $lang, $phrase );
-			$translation = $prhase;
+			$translation = $phrase;
 		}
 		return $translation;
 	}

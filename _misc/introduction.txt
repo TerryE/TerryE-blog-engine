@@ -30,8 +30,6 @@ See the GNU General Public License for more details.
 
  - <a href="annotated.html"><b>Classes</b></a>
 
- - \ref functions.php
-
 \section introduction Introduction
 
 I decided to implement my own blog in 2006 and in <a href="/article-6">this early article</a> 
@@ -74,7 +72,15 @@ had some other key goals for Version 3:
    end-users to add comments and as an alternative authoring tool for use 'on the road'.
 
 The corresponding sections referenced in the above list give a general overview and discussion on
-this aspect of the design, with the meat of the code-specific documentation covered in the Class List
+this aspect of the design, with the meat of the code-specific documentation covered in the Class List.
+
+In this latest version 3.2, I have finally abandoned my experimenting with a singleton class pattern.
+I had adopted this pattern for my singleton objects, because the approach seemed neat and economical.  
+However, I have come to appreciate the wide critique of the flaws of this approach and agree: it involves
+more pain than its worth and using explicit dependency injection just makes life a lot easier.  As a 
+consequence, I've also moved from using the obsolescent \a __autoload() magic method to using 
+<a href="http://php.net/manual/en/function.spl-autoload-register.php">spl_autoload_register()</a>, and 
+this has also allowed me to retire my last functions and move to a pure class base implementation.
 
 \page Economy Economy of implementation
 

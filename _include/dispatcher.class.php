@@ -33,7 +33,7 @@ class Dispatcher {
 
 		$this->includeDir				= $bootstrapContext['INC_DIR'] . DIRECTORY_SEPARATOR;
 		$this->cacheDir					= $bootstrapContext['CACHE_DIR'] . DIRECTORY_SEPARATOR;
-		$this->defaultBuilderPattern	= '/' . $bootstrapContext['DEFAULT_BUILDER_PATTERN'] . '/';
+		$this->defaultBuilderPattern	= "/$bootstrapContext[DEFAULT_BUILDER_PATTERN]/";
 		$this->cxt						= NULL; 
 
 		spl_autoload_register( array( $this, 'autoload' ) );
@@ -42,9 +42,10 @@ class Dispatcher {
 			$cxt = new AppContext( $bootstrapContext );
 			$this->cxt = $cxt;
 
-			// If this class wasn't loaded from the cache, then for debug levels 0  and 1 we will 
-			// still want to create a cache copy.  We need to build this explicitly as the 
-			// the autoloader doesn't build this class.
+			// If this class wasn't loaded from the cache, then for debug levels 0 and 1 we will 
+			// still want to create a cache copy.  It needs to be build explicitly as the autoloader  
+			// doesn't build this class.  The "load from cache" check prevents autoloading the build
+			// framework on main-path execution. 
 			if( $cxt->debugLevel != 2 && strpos( __FILE__ , $this->cacheDir ) !== 0 ) {
 				$tmp = new DefaultBuilder( __CLASS__, $this->includeDir, $this->cxt );
 				unset( $tmp );
@@ -104,10 +105,10 @@ class Dispatcher {
 
 				// otherwise determine the builder class
 				if( preg_match( $this->defaultBuilderPattern, $className) || 
-					!preg_match( '/(\w[a-z]*)[A-Z]\w*/', $className, $m) ) {
+					!preg_match( '/(\w[a-z]*)[A-Z]\w*/', $className, $match) ) {
 					$builderClass = 'default';
 				} else {
-					$builderClass	=  $m[1];
+					$builderClass	=  $match	[1];
 				}
 
 				// Call the builder to create the _cache version (this may trigger its autoload)
